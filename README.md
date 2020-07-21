@@ -162,6 +162,8 @@ RT
 
 - 修改了移动机制。
 
+- 重构了部分代码。
+
 说明：迷宫和端午地图的生成参考了 [https://github.com/By-Ha/Checkmate/blob/master/game/map.js](https://github.com/By-Ha/Checkmate/blob/master/game/map.js)。
 
 **使用方法：**
