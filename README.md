@@ -164,6 +164,10 @@ RT
 
 - 重构了部分代码。
 
+- 修复了主基地和城市生成的问题。
+
+- 添加了保存回放接口（只是接口）。
+
 说明：迷宫和端午地图的生成参考了 [https://github.com/By-Ha/Checkmate/blob/master/game/map.js](https://github.com/By-Ha/Checkmate/blob/master/game/map.js)。
 
 **使用方法：**

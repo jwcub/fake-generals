@@ -79,6 +79,13 @@ enum map_mode
     CFlag,
     CPoints
 };
+enum Movement
+{
+    Up,
+    Right,
+    Down,
+    Left
+};
 struct node
 {
     int belong, tmp;
@@ -200,7 +207,7 @@ void concit()
             px = randnum(1, X), py = randnum(1, Y);
             if (mp[px][py].type != Empty_land)
                 continue;
-            mp[px][py].type = City;
+            mp[px][py].type = Empty_city;
             mp[px][py].tmp = randnum(35, 50);
             break;
         }
@@ -677,7 +684,7 @@ void putmap(int sx, int sy, int id)
                     }
                     else
                     {
-                        if (mapmode == 7 || mapmode == 6 || mapmode == 5)
+                        if ((mapmode == 7 || mapmode == 6 || mapmode == 5) && mode == Tdm)
                             SetColor(cls[Inteam[mp[i][j].belong] % 11], 0, 100);
                         printf("{");
                         getnum(mp[i][j].tmp);
@@ -773,7 +780,7 @@ void putmap(int sx, int sy, int id)
                     else if (sight[id][i][j])
                     {
                         SetColor(cls[mp[i][j].belong % 11], 0, 1);
-                        if (mapmode == 7 || mapmode == 6 || mapmode == 5)
+                        if ((mapmode == 7 || mapmode == 6 || mapmode == 5) && mode == Tdm)
                             SetColor(cls[Inteam[mp[i][j].belong] % 11], 0, 100);
                         printf("{");
                         getnum(mp[i][j].tmp);
@@ -1969,6 +1976,61 @@ void pointsmatchconv()
     }
     return;
 }
+void readconfig()
+{
+    ifstream infile;
+    infile.open("config", ios::in);
+    infile >> X >> Y >> wallpr >> citypr >> objectpr >> tpt >> gennum >> teamnum >> dq >> kttime >> pointstime;
+    infile.close();
+    return;
+}
+void saveconfig()
+{
+    ofstream outfile;
+    outfile.open("config", ios::out | ios::trunc);
+    outfile << X << endl
+            << Y << endl
+            << wallpr << endl
+            << citypr << endl
+            << objectpr << endl
+            << tpt << endl
+            << gennum << endl
+            << teamnum << endl
+            << dq << endl
+            << kttime << endl
+            << pointstime << endl;
+    outfile.close();
+    return;
+}
+void savegamemode()
+{
+
+    return;
+}
+void savemap()
+{
+
+    return;
+}
+struct movementreplay
+{
+    int playerid;
+    Movement movement;
+} movements[100005];
+int movementnum;
+void savemovement()
+{
+
+    return;
+}
+void savereplay()
+{
+    savegamemode();
+    saveconfig();
+    savemap();
+    savemovement();
+    return;
+}
 int main()
 {
     system("title generals");
@@ -2054,10 +2116,7 @@ int main()
     }
     if (ifown == 2)
     {
-        ifstream infile;
-        infile.open("config", ios::in);
-        infile >> X >> Y >> wallpr >> citypr >> objectpr >> tpt >> gennum >> teamnum >> dq >> kttime >> pointstime;
-        infile.close();
+        readconfig();
         printf("读取配置文件成功！\n");
     }
     if (ifown == 3)
@@ -2089,20 +2148,7 @@ int main()
         scanf("%d", &tmp);
         if (tmp == 1)
         {
-            ofstream outfile;
-            outfile.open("config", ios::out | ios::trunc);
-            outfile << X << endl
-                    << Y << endl
-                    << wallpr << endl
-                    << citypr << endl
-                    << objectpr << endl
-                    << tpt << endl
-                    << gennum << endl
-                    << teamnum << endl
-                    << dq << endl
-                    << kttime << endl
-                    << pointstime << endl;
-            outfile.close();
+            saveconfig();
             printf("保存配置文件成功！\n");
         }
     }
@@ -2296,12 +2342,14 @@ int main()
                 }
         if (winner == -1)
         {
-            MessageBox(NULL, "没有玩家胜利。", "欢呼", MB_OK);
+            if (MessageBox(NULL, "没有玩家胜利。是否保存回放？", "欢呼", MB_OKCANCEL) == IDOK)
+                savereplay();
         }
         else
         {
-            string opt = "player" + myto_string(winner) + "赢了!";
-            MessageBox(NULL, opt.c_str(), "欢呼", MB_OK);
+            string opt = "player" + myto_string(winner) + "赢了！是否保存回放？";
+            if (MessageBox(NULL, opt.c_str(), "欢呼", MB_OKCANCEL) == IDOK)
+                savereplay();
         }
         return 0;
     }
@@ -2486,8 +2534,9 @@ int main()
                     }
                 if (opt != "")
                 {
-                    opt += "赢了！";
-                    MessageBox(NULL, opt.c_str(), "欢呼", MB_OK);
+                    opt += "赢了！是否保存回放？";
+                    if (MessageBox(NULL, opt.c_str(), "欢呼", MB_OKCANCEL) == IDOK)
+                        savereplay();
                     return 0;
                 }
             }
@@ -2551,8 +2600,9 @@ int main()
                 }
             if (opt != "")
             {
-                opt += "赢了！";
-                MessageBox(NULL, opt.c_str(), "欢呼", MB_OK);
+                opt += "赢了！是否保存回放？";
+                if (MessageBox(NULL, opt.c_str(), "欢呼", MB_OKCANCEL) == IDOK)
+                    savereplay();
                 return 0;
             }
             for (int i = 1; i <= X; i++)
@@ -2636,10 +2686,11 @@ int main()
             }
     if (winner != -1)
     {
-        string opt = "team" + myto_string(winner) + "赢了!";
-        MessageBox(NULL, opt.c_str(), "欢呼", MB_OK);
+        string opt = "team" + myto_string(winner) + "赢了！是否保存回放？";
+        if (MessageBox(NULL, opt.c_str(), "欢呼", MB_OKCANCEL) == IDOK)
+            savereplay();
     }
-    else
-        MessageBox(NULL, "没有队伍胜利。", "欢呼", MB_OK);
+    else if (MessageBox(NULL, "没有队伍胜利。是否保存回放？", "欢呼", MB_OKCANCEL) == IDOK)
+        savereplay();
     return 0;
 }
