@@ -8,7 +8,7 @@ RT
 
 基本操作与 generals.io 相同，WASD移动兵力，按Z切换半兵，鼠标左键单击可以移动光标。
 
-特别地，按F可以切换不同玩家的视角。（开发者模式）
+特别地，在回放中，按F可以切换不同玩家的视角。
 
 其中用```{}```包裹的数字表示主基地，用```[]```包裹的数字表示城市，选中的土地会以红色高亮显示。
 
@@ -167,6 +167,8 @@ RT
 - 修复了主基地和城市生成的问题。
 
 - 添加了保存回放接口（只是接口）。
+
+- 添加了保存回放功能。
 
 说明：迷宫和端午地图的生成参考了 [https://github.com/By-Ha/Checkmate/blob/master/game/map.js](https://github.com/By-Ha/Checkmate/blob/master/game/map.js)。
 

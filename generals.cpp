@@ -101,7 +101,7 @@ int X = 15, Y = 15;     //地图的长和宽。如果以迷宫地图或端午地
 double wallpr = 0.05;   //墙的密度
 double citypr = 0.05;   //城市的密度
 double objectpr = 0.06; //道具的密度
-int tpt = 120;          //每个回合后的等待时间。如果想体验原速，建议设为480
+int tpt = 100;          //每个回合后的等待时间。如果想体验原速，建议设为400
 int gennum = 4;         //玩家的数量。当然只有沙雕Bot
 int teamnum = 2;        //队伍的数量。如果以TDM模式游玩，请确保玩家数量能被队伍数量整除
 int dq = 40;            //毒圈的扩散时间
@@ -123,6 +123,7 @@ bool ktiscoming = false;
 bool iskt[105][105];
 bool ishavets[105];
 int ktremaintime = -1;
+int isreplay;
 int randnum(int l, int r)
 {
     return rand() % (r - l + 1) + l;
@@ -1075,7 +1076,7 @@ void putmap(int sx, int sy, int id)
         else
             printf("                                                                                                    \n");
     }
-    if (starting)
+    if (starting || isreplay == 2)
         return;
     gotoxy(0, 2 * ((starting ? 15 : (X > 15 ? min(sx + 7, X) : X)) - (starting ? 1 : (X > 15 ? sx - 7 : 1)) + 1) + 1);
     for (int i = 1; i <= 9; i++)
@@ -2002,33 +2003,27 @@ void saveconfig()
     outfile.close();
     return;
 }
-void savegamemode()
-{
-
-    return;
-}
+bool isfirstsave = true;
 void savemap()
 {
-
-    return;
-}
-struct movementreplay
-{
-    int playerid;
-    Movement movement;
-} movements[100005];
-int movementnum;
-void savemovement()
-{
-
+    ofstream outfile;
+    if (isfirstsave)
+        outfile.open("Map", ios::out | ios::trunc), isfirstsave = false;
+    else
+        outfile.open("Map", ios::out | ios::app);
+    for (int i = 1; i <= X; i++)
+        for (int j = 1; j <= Y; j++)
+            outfile << mp[i][j].belong << " " << mp[i][j].tmp << " " << mp[i][j].type << " " << fog[i][j] << endl;
+    outfile.close();
     return;
 }
 void savereplay()
 {
-    savegamemode();
     saveconfig();
-    savemap();
-    savemovement();
+    ofstream outfile;
+    outfile.open("Map", ios::out | ios::app);
+    outfile << "-1 -1 -1" << endl;
+    outfile.close();
     return;
 }
 int main()
@@ -2072,84 +2067,94 @@ int main()
     system("cls");
     while (1)
     {
-        printf("选择模式：1 = Free For All， 2 = Team Deathmatch，3 = 50v50\n");
-        scanf("%d", &mode);
-        if (mode == 1 || mode == 2 || mode == 3)
+        printf("1 = 正常游戏， 2 = 播放回放\n");
+        scanf("%d", &isreplay);
+        if (isreplay == 1 || isreplay == 2)
             break;
     }
-    if (mode == 3)
+    if (isreplay == 1)
     {
-        fvf = true;
-        mode = Tdm;
-        X = 99;
-        Y = 99;
-        gennum = 100;
-        teamnum = 2;
-        dq = 10;
-        objectpr = 0.05;
-        kttime = 20;
-    }
-    while (1)
-    {
-        printf("选择地图：1 = 随机地图， 2 = 空白地图， 3 = 迷宫地图， 4 = 端午地图， 5  = 吃鸡地图， 6 = 夺旗地图， 7 = 占点地图\n");
-        scanf("%d", &mapmode);
-        if (mode == 1 && mapmode == 6)
+        while (1)
         {
-            printf("抱歉，夺旗地图不支持FFA模式。\n");
-            continue;
+            printf("选择模式：1 = Free For All， 2 = Team Deathmatch，3 = 50v50\n");
+            scanf("%d", &mode);
+            if (mode == 1 || mode == 2 || mode == 3)
+                break;
         }
-        if (mode == 1 && mapmode == 7)
+        if (mode == 3)
         {
-            printf("抱歉，占点地图不支持FFA模式。\n");
-            continue;
+            fvf = true;
+            mode = Tdm;
+            X = 99;
+            Y = 99;
+            gennum = 100;
+            teamnum = 2;
+            dq = 10;
+            objectpr = 0.05;
+            kttime = 20;
         }
-        if (mapmode == 1 || mapmode == 2 || mapmode == 3 || mapmode == 4 || mapmode == 5 || mapmode == 6 || mapmode == 7)
-            break;
-    }
-    int ifown;
-    while (1)
-    {
-        printf("选择配置：1 = 默认配置， 2 = 读取配置文件, 3 = 自定义配置\n警告：在使用自定义配置前，请务必仔细阅读代码中的注释。\n");
-        scanf("%d", &ifown);
-        if (ifown == 1 || ifown == 2 || ifown == 3)
-            break;
-    }
-    if (ifown == 2)
-    {
-        readconfig();
-        printf("读取配置文件成功！\n");
-    }
-    if (ifown == 3)
-    {
-        printf("请输入地图的长\n");
-        scanf("%d", &X);
-        printf("请输入地图的宽\n");
-        scanf("%d", &Y);
-        printf("请输入墙的密度\n");
-        scanf("%lf", &wallpr);
-        printf("请输入城市的密度\n");
-        scanf("%lf", &citypr);
-        printf("请输入道具的密度\n");
-        scanf("%lf", &objectpr);
-        printf("请输入每个回合后的等待时间\n");
-        scanf("%d", &tpt);
-        printf("请输入玩家的数量\n");
-        scanf("%d", &gennum);
-        printf("请输入队伍的数量\n");
-        scanf("%d", &teamnum);
-        printf("请输入毒圈的扩散时间\n");
-        scanf("%d", &dq);
-        printf("请输入空投的投放时间\n");
-        scanf("%d", &kttime);
-        printf("请输入占领一个据点所需的时间\n");
-        scanf("%d", &pointstime);
-        printf("是否保存配置文件？(1 = 是，2 = 否)\n");
-        int tmp;
-        scanf("%d", &tmp);
-        if (tmp == 1)
+        while (1)
         {
-            saveconfig();
-            printf("保存配置文件成功！\n");
+            printf("选择地图：1 = 随机地图， 2 = 空白地图， 3 = 迷宫地图， 4 = 端午地图， 5  = 吃鸡地图， 6 = 夺旗地图， 7 = 占点地图\n");
+            scanf("%d", &mapmode);
+            if (mode == 1 && mapmode == 6)
+            {
+                printf("抱歉，夺旗地图不支持FFA模式。\n");
+                continue;
+            }
+            if (mode == 1 && mapmode == 7)
+            {
+                printf("抱歉，占点地图不支持FFA模式。\n");
+                continue;
+            }
+            if (mapmode == 1 || mapmode == 2 || mapmode == 3 || mapmode == 4 || mapmode == 5 || mapmode == 6 || mapmode == 7)
+                break;
+        }
+        int ifown;
+        while (1)
+        {
+            printf("选择配置：1 = 默认配置， 2 = 读取配置文件, 3 = 自定义配置\n警告：在使用自定义配置前，请务必仔细阅读代码中的注释。\n");
+            scanf("%d", &ifown);
+            if (ifown == 1 || ifown == 2 || ifown == 3)
+                break;
+        }
+        if (ifown == 2)
+        {
+            readconfig();
+            printf("读取配置文件成功！\n");
+        }
+        if (ifown == 3)
+        {
+            printf("请输入地图的长\n");
+            scanf("%d", &X);
+            printf("请输入地图的宽\n");
+            scanf("%d", &Y);
+            printf("请输入墙的密度\n");
+            scanf("%lf", &wallpr);
+            printf("请输入城市的密度\n");
+            scanf("%lf", &citypr);
+            printf("请输入道具的密度\n");
+            scanf("%lf", &objectpr);
+            printf("请输入每个回合后的等待时间\n");
+            scanf("%d", &tpt);
+            printf("请输入玩家的数量\n");
+            scanf("%d", &gennum);
+            printf("请输入队伍的数量\n");
+            scanf("%d", &teamnum);
+            printf("请输入毒圈的扩散时间\n");
+            scanf("%d", &dq);
+            printf("请输入空投的投放时间\n");
+            scanf("%d", &kttime);
+            printf("请输入占领一个据点所需的时间\n");
+            scanf("%d", &pointstime);
+            printf("是否保存配置文件？(1 = 是，2 = 否)\n");
+            int tmp;
+            scanf("%d", &tmp);
+            if (tmp == 1)
+            {
+                saveconfig();
+                printf("保存配置文件成功！\n");
+            }
         }
     }
     int mapopt;
@@ -2163,47 +2168,117 @@ int main()
     if (mapopt == 2)
         opt = true;
     system("cls");
-    convmap();
-    if (mapmode == 1 || mapmode == 5 || mapmode == 6 || mapmode == 7)
+    if (isreplay == 1)
     {
-        congen();
-        if (mapmode != 5 && mapmode != 6 && mapmode != 7)
-            concit();
-        convwall();
+        convmap();
+        if (mapmode == 1 || mapmode == 5 || mapmode == 6 || mapmode == 7)
+        {
+            congen();
+            if (mapmode != 5 && mapmode != 6 && mapmode != 7)
+                concit();
+            convwall();
+        }
+        else if (mapmode == 2)
+            congen();
+        else if (mapmode == 3)
+            convmaze();
+        else if (mapmode == 4)
+            convdragon();
     }
-    else if (mapmode == 2)
-        congen();
-    else if (mapmode == 3)
-        convmaze();
-    else if (mapmode == 4)
-        convdragon();
     memset(sight, 0, sizeof(sight));
     int keys[6] = {'W', 'S', 'A', 'D', 'Z', 'F'};
     int turn = 1;
     int currentplayer = 1;
     objectnum = int(double(X * Y) * objectpr);
-    for (int k = 1; k <= gennum; k++)
+    if (isreplay == 1)
     {
-        player[k].playerid = k, player[k].halfselect = false, player[k].isbot = false;
-        for (int i = 1; i <= X; i++)
-            for (int j = 1; j <= Y; j++)
-                if (mp[i][j].type == General && mp[i][j].belong == k)
+        for (int k = 1; k <= gennum; k++)
+        {
+            player[k].playerid = k, player[k].halfselect = false, player[k].isbot = false;
+            for (int i = 1; i <= X; i++)
+                for (int j = 1; j <= Y; j++)
+                    if (mp[i][j].type == General && mp[i][j].belong == k)
+                    {
+                        player[k].selectedx = i;
+                        player[k].selectedy = j;
+                        i = X + 1;
+                        break;
+                    }
+        }
+        for (int i = 2; i <= gennum; i++)
+        {
+            player[i].isbot = true;
+            player[i].botit();
+        }
+        if (mapmode == 5 || mapmode == 6 || mapmode == 7)
+            pubgconv();
+        if (mapmode == 7)
+            pointsmatchconv();
+    }
+    if (isreplay == 2)
+    {
+        readconfig();
+        if (mode == 2)
+            teaming();
+        for (int k = 1; k <= gennum; k++)
+            for (int i = 1; i <= X; i++)
+                for (int j = 1; j <= Y; j++)
+                    sight[k][i][j] = true;
+        ifstream infile;
+        infile.open("Map", ios::in);
+        while (1)
+        {
+            bool isend = false;
+            for (int i = 1; i <= X; i++)
+                for (int j = 1; j <= Y; j++)
                 {
-                    player[k].selectedx = i;
-                    player[k].selectedy = j;
-                    i = X + 1;
-                    break;
+                    int tmpp;
+                    infile >> mp[i][j].belong >> mp[i][j].tmp >> tmpp >> fog[i][j];
+                    if (tmpp == -1 || mp[i][j].belong == -1 || mp[i][j].tmp == -1)
+                    {
+                        isend = true;
+                        i = X + 1;
+                        break;
+                    }
+                    mp[i][j].type = (land_type)tmpp;
                 }
+            if (isend)
+                break;
+            putmap(player[currentplayer].selectedx, player[currentplayer].selectedy, currentplayer);
+            for (int k = 1; k <= gennum; k++)
+            {
+                player[k].playerid = k, player[k].halfselect = false, player[k].isbot = false;
+                for (int i = 1; i <= X; i++)
+                    for (int j = 1; j <= Y; j++)
+                        if (mp[i][j].type == General && mp[i][j].belong == k)
+                        {
+                            player[k].selectedx = i;
+                            player[k].selectedy = j;
+                            i = X + 1;
+                            break;
+                        }
+            }
+            if (KEY_DOWN('F'))
+                while (1)
+                {
+                    currentplayer = (currentplayer == gennum ? 1 : currentplayer + 1);
+                    bool flag = false;
+                    for (int i = 1; i <= X; i++)
+                        for (int j = 1; j <= Y; j++)
+                            if (mp[i][j].type == General && mp[i][j].belong == currentplayer && mp[i][j].tmp > 0)
+                            {
+                                flag = true;
+                                i = X + 1;
+                                break;
+                            }
+                    if (flag)
+                        break;
+                }
+            Sleep(tpt);
+        }
+        infile.close();
+        return 0;
     }
-    for (int i = 2; i <= gennum; i++)
-    {
-        player[i].isbot = true;
-        player[i].botit();
-    }
-    if (mapmode == 5 || mapmode == 6 || mapmode == 7)
-        pubgconv();
-    if (mapmode == 7)
-        pointsmatchconv();
     if (mode == 1)
     {
         while (alivegennum > 1)
@@ -2329,6 +2404,7 @@ int main()
                         blindtimeremain[i] = -1;
             if (mapmode == 5 && turn % kttime == 0)
                 spawnkt();
+            savemap();
             turn++;
         }
         int winner = -1;
@@ -2673,6 +2749,7 @@ int main()
                     }
                 }
         }
+        savemap();
         turn++;
     }
     int winner = -1;
