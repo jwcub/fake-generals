@@ -22,6 +22,8 @@ RT
 
 **由于修改了移动机制，我们推荐使用长按进行操作，而不是连击。**
 
+**如果您出现了空白字符不适应情况，可以将所有的```████```替换为```██```。**（参考了 [https://kana.byha.top:444/post/8729](https://kana.byha.top:444/post/8729)）
+
 ## TDM模式规则
 
 - 队友之间共享视野，但不可互相攻击
@@ -190,7 +192,7 @@ RT
 
 - 迷宫和端午地图的生成参考了 [https://github.com/By-Ha/Checkmate/blob/master/game/map.js](https://github.com/By-Ha/Checkmate/blob/master/game/map.js)。
 
-- 涂色地图的规则参考了[https://kana.byha.top:444/post/8707](https://kana.byha.top:444/post/8707)。
+- 涂色地图的规则参考了 [https://kana.byha.top:444/post/8707](https://kana.byha.top:444/post/8707)。
 
 ## 使用方法
 
