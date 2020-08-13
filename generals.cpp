@@ -77,7 +77,8 @@ enum map_mode
     Dboat,
     Pubg,
     CFlag,
-    CPoints
+    CPoints,
+    Paint
 };
 enum Movement
 {
@@ -107,6 +108,7 @@ int teamnum = 2;        //队伍的数量。如果以TDM模式游玩，请确保
 int dq = 40;            //毒圈的扩散时间
 int kttime = 100;       //空投的投放时间。请保证此变量大于10
 int pointstime = 20;    //占领一个据点所需的时间
+int paintTime = 300;    //涂色地图的时间
 
 int dir[4][2] = {{-1, 0}, {0, 1}, {1, 0}, {0, -1}};
 int vis[105][105];
@@ -124,6 +126,8 @@ bool iskt[105][105];
 bool ishavets[105];
 int ktremaintime = -1;
 int isreplay;
+bool isPaint;
+int paintRemainTime;
 int randnum(int l, int r)
 {
     return rand() % (r - l + 1) + l;
@@ -286,6 +290,7 @@ int find(int x)
         return x;
     return id[x] = find(id[x]);
 }
+//https://github.com/By-Ha/Checkmate/blob/master/game/map.js
 void convmaze()
 {
     convmap();
@@ -1187,6 +1192,8 @@ void putmap(int sx, int sy, int id)
             displaynews();
         }
     }
+    if (isPaint)
+        printf("涂色模式还剩 %d 回合\n", paintRemainTime);
     if (isgz)
         printf("您已阵亡，观战中……\n");
     return;
@@ -1272,6 +1279,8 @@ struct Player
     }
     void kil(int pid)
     {
+        if (isPaint)
+            return;
         if (mode != 2)
         {
             for (int i = 1; i <= X; i++)
@@ -2095,7 +2104,7 @@ int main()
         }
         while (1)
         {
-            printf("选择地图：1 = 随机地图， 2 = 空白地图， 3 = 迷宫地图， 4 = 端午地图， 5  = 吃鸡地图， 6 = 夺旗地图， 7 = 占点地图\n");
+            printf("选择地图：1 = 随机地图， 2 = 空白地图， 3 = 迷宫地图， 4 = 端午地图， 5  = 吃鸡地图， 6 = 夺旗地图， 7 = 占点地图， 8 = 涂色地图\n");
             scanf("%d", &mapmode);
             if (mode == 1 && mapmode == 6)
             {
@@ -2107,7 +2116,7 @@ int main()
                 printf("抱歉，占点地图不支持FFA模式。\n");
                 continue;
             }
-            if (mapmode == 1 || mapmode == 2 || mapmode == 3 || mapmode == 4 || mapmode == 5 || mapmode == 6 || mapmode == 7)
+            if (mapmode == 1 || mapmode == 2 || mapmode == 3 || mapmode == 4 || mapmode == 5 || mapmode == 6 || mapmode == 7 || mapmode == 8)
                 break;
         }
         int ifown;
@@ -2171,6 +2180,11 @@ int main()
     if (isreplay == 1)
     {
         convmap();
+        if (mapmode == Paint)
+        {
+            isPaint = true;
+            mapmode = Blank;
+        }
         if (mapmode == 1 || mapmode == 5 || mapmode == 6 || mapmode == 7)
         {
             congen();
@@ -2279,9 +2293,11 @@ int main()
         infile.close();
         return 0;
     }
+    if (isPaint)
+        paintRemainTime = paintTime;
     if (mode == 1)
     {
-        while (alivegennum > 1)
+        while (alivegennum > 1 && (!isPaint || isPaint && paintRemainTime > 0))
         {
             rm = dq - turn % dq;
             putmap(player[currentplayer].selectedx, player[currentplayer].selectedy, currentplayer);
@@ -2404,8 +2420,61 @@ int main()
                         blindtimeremain[i] = -1;
             if (mapmode == 5 && turn % kttime == 0)
                 spawnkt();
+            if (isPaint)
+            {
+                int tmp = -1;
+                bool isOne = true;
+                for (int i = 1; i <= X; i++)
+                    for (int j = 1; j <= Y; j++)
+                        if (mp[i][j].type == General && mp[i][j].tmp > 0)
+                        {
+                            if (tmp == -1)
+                                tmp = mp[i][j].belong;
+                            else if (tmp != mp[i][j].belong)
+                            {
+                                isOne = false;
+                                i = X + 1;
+                                break;
+                            }
+                        }
+                if (isOne)
+                    break;
+            }
             savemap();
             turn++;
+            if (isPaint)
+                paintRemainTime--;
+        }
+        if (isPaint)
+        {
+            int maxLand = -1, playerLand[105];
+            string winner = "";
+            for (int i = 1; i <= gennum; i++)
+                playerLand[i] = 0;
+            for (int i = 1; i <= X; i++)
+                for (int j = 1; j <= Y; j++)
+                    if ((mp[i][j].type == Land || mp[i][j].type == General || mp[i][j].type == City) && mp[i][j].tmp > 0)
+                        playerLand[mp[i][j].belong]++, maxLand = max(maxLand, playerLand[mp[i][j].belong]);
+            if (maxLand == -1)
+                if (MessageBox(NULL, "没有玩家胜利。是否保存回放？", "欢呼", MB_OKCANCEL) == IDOK)
+                    savereplay();
+                else
+                    ;
+            else
+            {
+                for (int i = 1; i <= gennum; i++)
+                    if (playerLand[i] == maxLand)
+                        if (winner == "")
+                            winner = "player" + myto_string(i);
+                        else
+                        {
+                            winner += ", player" + myto_string(i);
+                        }
+                winner += "赢了！是否保存回放？";
+                if (MessageBox(NULL, winner.c_str(), "欢呼", MB_OKCANCEL) == IDOK)
+                    savereplay();
+            }
+            return 0;
         }
         int winner = -1;
         for (int i = 1; i <= X; i++)
@@ -2441,7 +2510,7 @@ int main()
     }
     if (mapmode == 7)
         ifcanconvobject = true;
-    while (aliveteamnum > 1)
+    while (aliveteamnum > 1 && (!isPaint || isPaint && paintRemainTime > 0))
     {
         rm = dq - turn % dq;
         putmap(player[currentplayer].selectedx, player[currentplayer].selectedy, currentplayer);
@@ -2751,6 +2820,39 @@ int main()
         }
         savemap();
         turn++;
+        if (isPaint)
+            paintRemainTime--;
+    }
+    if (isPaint)
+    {
+        int maxLand = -1, teamLand[105];
+        string winner = "";
+        for (int i = 1; i <= teamnum; i++)
+            teamLand[i] = 0;
+        for (int i = 1; i <= X; i++)
+            for (int j = 1; j <= Y; j++)
+                if ((mp[i][j].type == Land || mp[i][j].type == General || mp[i][j].type == City) && mp[i][j].tmp > 0)
+                    teamLand[Inteam[mp[i][j].belong]]++, maxLand = max(maxLand, teamLand[Inteam[mp[i][j].belong]]);
+        if (maxLand == -1)
+            if (MessageBox(NULL, "没有队伍胜利。是否保存回放？", "欢呼", MB_OKCANCEL) == IDOK)
+                savereplay();
+            else
+                ;
+        else
+        {
+            for (int i = 1; i <= teamnum; i++)
+                if (teamLand[i] == maxLand)
+                    if (winner == "")
+                        winner = "team" + myto_string(i);
+                    else
+                    {
+                        winner += ", team" + myto_string(i);
+                    }
+            winner += "赢了！是否保存回放？";
+            if (MessageBox(NULL, winner.c_str(), "欢呼", MB_OKCANCEL) == IDOK)
+                savereplay();
+        }
+        return 0;
     }
     int winner = -1;
     for (int i = 1; i <= X; i++)
