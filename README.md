@@ -204,6 +204,8 @@ RT
 
 - 堑壕地图的生成参考了 [https://github.com/By-Ha/Checkmate/pull/15/files](https://github.com/By-Ha/Checkmate/pull/15/files)。
 
+- 吃鸡地图的规则参考了 [https://github.com/By-Ha/Checkmate/blob/master/game/core.js](https://github.com/By-Ha/Checkmate/blob/master/game/core.js)。
+
 ## 使用方法
 
 直接编译运行```generals.cpp```即可。
