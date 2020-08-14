@@ -226,7 +226,7 @@ void dfs(int cnt, int x, int y)
     for (int i = 0; i < 4; i++)
     {
         int px = x + dir[i][0], py = y + dir[i][1];
-        if (px >= 1 && px <= X && py >= 1 && py <= Y && mp[px][py].type == Empty_land && !vis[px][py])
+        if (px >= 1 && px <= X && py >= 1 && py <= Y && mp[px][py].type != Wall && !vis[px][py])
         {
             dfs(cnt, px, py);
         }
