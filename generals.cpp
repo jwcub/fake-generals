@@ -103,11 +103,11 @@ int X = 15, Y = 15;     //地图的长和宽。如果以迷宫地图或端午地
 double wallpr = 0.05;   //墙的密度
 double citypr = 0.05;   //城市的密度
 double objectpr = 0.06; //道具的密度
-int tpt = 100;          //每个回合后的等待时间。如果想体验原速，建议设为400
-int gennum = 4;         //玩家的数量。当然只有沙雕Bot
-int teamnum = 2;        //队伍的数量。如果以TDM模式游玩，请确保玩家数量能被队伍数量整除
+int tpt = 100;          //每个回合后的等待时间。如果想体验原速，建议设为 400
+int gennum = 4;         //玩家的数量。当然只有沙雕 Bot
+int teamnum = 2;        //队伍的数量。如果以 TDM 模式游玩，请确保玩家数量能被队伍数量整除
 int dq = 40;            //毒圈的扩散时间
-int kttime = 100;       //空投的投放时间。请保证此变量大于10
+int kttime = 100;       //空投的投放时间。请保证此变量大于 10
 int pointstime = 20;    //占领一个据点所需的时间
 int paintTime = 300;    //涂色地图的时间
 
