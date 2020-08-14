@@ -76,6 +76,12 @@ RT
 
 - 领土数量最多的玩家/队伍胜利
 
+## 堑壕地图规则
+
+- 与空白地图相同
+
+- 玩家生成时都被山脉包围，只有一个缺口
+
 ## 几个注意事项
 
 - 要求Windows系统。如果输出的中文显示成乱码，可以把系统字符集切换为UTF-8。
@@ -188,11 +194,15 @@ RT
 
 - 添加了涂色地图。
 
+- 添加了堑壕地图。
+
 ## 说明
 
 - 迷宫和端午地图的生成参考了 [https://github.com/By-Ha/Checkmate/blob/master/game/map.js](https://github.com/By-Ha/Checkmate/blob/master/game/map.js)。
 
 - 涂色地图的规则参考了 [https://kana.byha.top:444/post/8707](https://kana.byha.top:444/post/8707)。
+
+- 堑壕地图的生成参考了 [https://github.com/By-Ha/Checkmate/pull/15/files](https://github.com/By-Ha/Checkmate/pull/15/files)
 
 ## 使用方法
 

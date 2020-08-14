@@ -78,7 +78,8 @@ enum map_mode
     Pubg,
     CFlag,
     CPoints,
-    Paint
+    Paint,
+    Qianhao
 };
 enum Movement
 {
@@ -225,7 +226,7 @@ void dfs(int cnt, int x, int y)
     for (int i = 0; i < 4; i++)
     {
         int px = x + dir[i][0], py = y + dir[i][1];
-        if (px >= 1 && px <= X && py >= 1 && py <= Y && mp[px][py].type != Wall && !vis[px][py])
+        if (px >= 1 && px <= X && py >= 1 && py <= Y && mp[px][py].type == Empty_land && !vis[px][py])
         {
             dfs(cnt, px, py);
         }
@@ -525,6 +526,28 @@ void convdragon()
             }
         }
     }
+    return;
+}
+//https://github.com/By-Ha/Checkmate/pull/15/files
+void generateQianHaoMap()
+{
+    congen();
+    for (int i = 1; i <= X; i++)
+        for (int j = 1; j <= Y; j++)
+            if (mp[i][j].type == General)
+            {
+                vector<pair<int, int> > tmp;
+                for (int k = i - 1; k <= i + 1; k++)
+                    for (int w = j - 1; w <= j + 1; w++)
+                        if (k >= 1 && k <= X && w >= 1 && w <= Y && mp[k][w].type == Empty_land)
+                        {
+                            mp[k][w].type = Wall;
+                            if (dist(i, j, k, w) == 1 && (k != -1 && w != -1 && k != X && w != Y))
+                                tmp.push_back(make_pair(k, w));
+                        }
+                int g = randnum(0, tmp.size() - 1);
+                mp[tmp[g].first][tmp[g].second].type = Empty_land;
+            }
     return;
 }
 int nowpri;
@@ -2104,7 +2127,7 @@ int main()
         }
         while (1)
         {
-            printf("选择地图：1 = 随机地图， 2 = 空白地图， 3 = 迷宫地图， 4 = 端午地图， 5  = 吃鸡地图， 6 = 夺旗地图， 7 = 占点地图， 8 = 涂色地图\n");
+            printf("选择地图：1 = 随机地图， 2 = 空白地图， 3 = 迷宫地图， 4 = 端午地图， 5  = 吃鸡地图， 6 = 夺旗地图， 7 = 占点地图， 8 = 涂色地图，\n9 = 堑壕地图\n");
             scanf("%d", &mapmode);
             if (mode == 1 && mapmode == 6)
             {
@@ -2116,7 +2139,7 @@ int main()
                 printf("抱歉，占点地图不支持FFA模式。\n");
                 continue;
             }
-            if (mapmode == 1 || mapmode == 2 || mapmode == 3 || mapmode == 4 || mapmode == 5 || mapmode == 6 || mapmode == 7 || mapmode == 8)
+            if (mapmode == 1 || mapmode == 2 || mapmode == 3 || mapmode == 4 || mapmode == 5 || mapmode == 6 || mapmode == 7 || mapmode == 8 || mapmode == 9)
                 break;
         }
         int ifown;
@@ -2180,11 +2203,6 @@ int main()
     if (isreplay == 1)
     {
         convmap();
-        if (mapmode == Paint)
-        {
-            isPaint = true;
-            mapmode = Blank;
-        }
         if (mapmode == 1 || mapmode == 5 || mapmode == 6 || mapmode == 7)
         {
             congen();
@@ -2198,6 +2216,16 @@ int main()
             convmaze();
         else if (mapmode == 4)
             convdragon();
+        else if (mapmode == Qianhao)
+        {
+            generateQianHaoMap();
+            mapmode = Blank;
+        }
+        else if (mapmode == Paint)
+        {
+            isPaint = true;
+            mapmode = Blank;
+        }
     }
     memset(sight, 0, sizeof(sight));
     int keys[6] = {'W', 'S', 'A', 'D', 'Z', 'F'};
