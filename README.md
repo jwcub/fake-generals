@@ -202,7 +202,7 @@ RT
 
 - 涂色地图的规则参考了 [https://kana.byha.top:444/post/8707](https://kana.byha.top:444/post/8707)。
 
-- 堑壕地图的生成参考了 [https://github.com/By-Ha/Checkmate/pull/15/files](https://github.com/By-Ha/Checkmate/pull/15/files)
+- 堑壕地图的生成参考了 [https://github.com/By-Ha/Checkmate/pull/15/files](https://github.com/By-Ha/Checkmate/pull/15/files)。
 
 ## 使用方法
 
