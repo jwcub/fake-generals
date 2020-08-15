@@ -574,6 +574,29 @@ struct News
     int opt, a, b, remtime;
 } news[10005];
 int newsl, newsr;
+void printPlayer(int id, bool isTeam = true)
+{
+    if (isTeam)
+    {
+        SetColor(cls[Inteam[id] % 11], 0, 100);
+        printf("player%d", id);
+        Setcolor();
+    }
+    else
+    {
+        SetColor(cls[id % 11], 0, 100);
+        printf("player%d", id);
+        Setcolor();
+    }
+    return;
+}
+void printTeam(int id)
+{
+    SetColor(cls[id % 11], 0, 100);
+    printf("team%d", id);
+    Setcolor();
+    return;
+}
 void displaynews()
 {
     while (newsr - newsl > 5)
@@ -581,15 +604,15 @@ void displaynews()
     for (int i = newsl; i < newsr; i++)
     {
         if (news[i].opt == 1)
-            printf("player%d拿到了team%d的旗帜\n", news[i].a, news[i].b);
+            printPlayer(news[i].a), printf(" 拿到了 "), printTeam(news[i].b), printf(" 的旗帜\n");
         else if (news[i].opt == 2)
-            printf("team%d的旗帜被重置了\n", news[i].a);
+            printTeam(news[i].a), printf(" 的旗帜被重置了\n");
         else if (news[i].opt == 3)
-            printf("player%d为team%d得分了\n", news[i].a, Inteam[news[i].a]);
+            printPlayer(news[i].a), printf(" 为 "), printTeam(Inteam[news[i].a]), printf(" 得分了\n");
         else if (news[i].opt == 4)
-            printf("team%d占领了一个据点\n", news[i].a);
+            printTeam(news[i].a), printf(" 占领了一个据点\n");
         else if (news[i].opt == 5)
-            printf("team%d失去了一个据点\n", news[i].a);
+            printTeam(news[i].a), printf(" 失去了一个据点\n");
         news[i].remtime--;
         if (news[i].remtime <= 0)
             newsl++;
@@ -809,7 +832,7 @@ void putmap(int sx, int sy, int id)
                     else if (sight[id][i][j])
                     {
                         SetColor(cls[mp[i][j].belong % 11], 0, 1);
-                        if ((mapmode == 7 || mapmode == 6 || mapmode == 5) && mode == Tdm)
+                        if ((mapmode == CFlag || mapmode == CPoints) && mode == Tdm)
                             SetColor(cls[Inteam[mp[i][j].belong] % 11], 0, 100);
                         printf("{");
                         getnum(mp[i][j].tmp);
