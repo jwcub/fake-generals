@@ -2063,12 +2063,26 @@ void savemap()
 {
     ofstream outfile;
     if (isfirstsave)
+    {
         outfile.open("Map", ios::out | ios::trunc), isfirstsave = false;
+        outfile << mode << " " << mapmode << endl;
+    }
     else
         outfile.open("Map", ios::out | ios::app);
     for (int i = 1; i <= X; i++)
         for (int j = 1; j <= Y; j++)
-            outfile << mp[i][j].belong << " " << mp[i][j].tmp << " " << mp[i][j].type << " " << fog[i][j] << endl;
+        {
+            outfile << mp[i][j].belong << " " << mp[i][j].tmp << " " << mp[i][j].type;
+            if (mapmode == Pubg)
+                outfile << " " << fog[i][j] << " " << iskt[i][j];
+            outfile << endl;
+        }
+    if (mapmode == CFlag)
+    {
+        for (int i = 1; i <= gennum; i++)
+            outfile << ifgetflag[i] << " ";
+        outfile << endl;
+    }
     outfile.close();
     return;
 }
@@ -2283,14 +2297,18 @@ int main()
     if (isreplay == 2)
     {
         readconfig();
-        if (mode == 2)
-            teaming();
         for (int k = 1; k <= gennum; k++)
             for (int i = 1; i <= X; i++)
                 for (int j = 1; j <= Y; j++)
                     sight[k][i][j] = true;
         ifstream infile;
         infile.open("Map", ios::in);
+        int _mode, _mapmode;
+        infile >> _mode >> _mapmode;
+        mode = (game_mode)_mode;
+        mapmode = (map_mode)_mapmode;
+        if (mode == 2)
+            teaming();
         while (1)
         {
             bool isend = false;
@@ -2298,7 +2316,9 @@ int main()
                 for (int j = 1; j <= Y; j++)
                 {
                     int tmpp;
-                    infile >> mp[i][j].belong >> mp[i][j].tmp >> tmpp >> fog[i][j];
+                    infile >> mp[i][j].belong >> mp[i][j].tmp >> tmpp;
+                    if (mapmode == Pubg)
+                        infile >> fog[i][j] >> iskt[i][j];
                     if (tmpp == -1 || mp[i][j].belong == -1 || mp[i][j].tmp == -1)
                     {
                         isend = true;
@@ -2309,6 +2329,9 @@ int main()
                 }
             if (isend)
                 break;
+            if (mapmode == CFlag)
+                for (int i = 1; i <= gennum; i++)
+                    infile >> ifgetflag[i];
             putmap(player[currentplayer].selectedx, player[currentplayer].selectedy, currentplayer);
             for (int k = 1; k <= gennum; k++)
             {
