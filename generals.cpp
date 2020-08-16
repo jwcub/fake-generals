@@ -2036,7 +2036,7 @@ void readconfig()
 {
     ifstream infile;
     infile.open("config", ios::in);
-    infile >> X >> Y >> wallpr >> citypr >> objectpr >> tpt >> gennum >> teamnum >> dq >> kttime >> pointstime;
+    infile >> X >> Y >> wallpr >> citypr >> objectpr >> tpt >> gennum >> teamnum >> dq >> kttime >> pointstime >> paintTime;
     infile.close();
     return;
 }
@@ -2054,7 +2054,8 @@ void saveconfig()
             << teamnum << endl
             << dq << endl
             << kttime << endl
-            << pointstime << endl;
+            << pointstime << endl
+            << paintTime << endl;
     outfile.close();
     return;
 }
@@ -2216,6 +2217,8 @@ int main()
             scanf("%d", &kttime);
             printf("请输入占领一个据点所需的时间\n");
             scanf("%d", &pointstime);
+            printf("请输入涂色地图的时间\n");
+            scanf("%d", &paintTime);
             printf("是否保存配置文件？(1 = 是，2 = 否)\n");
             int tmp;
             scanf("%d", &tmp);
