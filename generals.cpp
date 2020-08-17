@@ -687,7 +687,7 @@ void putmap(int sx, int sy, int id)
                 if (ifteam[Inteam[id]].find(mp[i][j].belong) != ifteam[Inteam[id]].end() || isreplay == 2 && mp[i][j].belong != 0)
                 {
                     miniMap[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = 'O';
-                    if ((mapmode == Pubg || mapmode == CFlag || mapmode == CPoints) && fvf)
+                    if ((mapmode == CFlag || mapmode == CPoints) || (mapmode == Pubg && fvf))
                         sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = max(sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1], Inteam[mp[i][j].belong] % 11);
                     else
                         sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = max(sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1], mp[i][j].belong % 11);
@@ -695,14 +695,15 @@ void putmap(int sx, int sy, int id)
                 if (mp[i][j].type == General && mp[i][j].belong == id)
                 {
                     miniMap[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = 'X';
-                    if ((mapmode == Pubg || mapmode == CFlag || mapmode == CPoints) && fvf)
+                    if ((mapmode == CFlag || mapmode == CPoints) || (mapmode == Pubg && fvf))
                         sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = Inteam[mp[i][j].belong] % 11;
                     else
                         sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = id % 11;
                 }
                 if (mp[i][j].type == Points || mp[i][j].type == Flag)
                 {
-                    sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = max(sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1], mp[i][j].belong % 11);
+                    if (mp[i][j].belong)
+                        sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = max(sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1], mp[i][j].belong % 11);
                     miniMap[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = '+';
                 }
                 if (mp[i][j].type == General && ifgetflag[mp[i][j].belong])
