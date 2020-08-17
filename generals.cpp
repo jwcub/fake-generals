@@ -664,7 +664,7 @@ void putmap(int sx, int sy, int id)
         fill(sm[0], sm[0] + 105 * 105, -2);
         for (int i = 1; i <= (X - 1) / 5 + 1; i++)
             for (int j = 1; j <= (Y - 1) / 5 + 1; j++)
-                miniMap[i][j] = ' ';
+                miniMap[i][j] = 'O';
         for (int i = 1; i <= X; i++)
         {
             for (int j = 1; j <= Y; j++)
