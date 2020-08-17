@@ -17,6 +17,7 @@
 #include <sstream>
 #include <fstream>
 #define KEY_DOWN(VK_NONAME) ((GetAsyncKeyState(VK_NONAME) & 0x8000) ? 1 : 0)
+using std::fill;
 using std::cin;
 using std::cout;
 using std::endl;
@@ -655,6 +656,17 @@ bool cmpteam(const teamscore &s1, const teamscore &s2)
 }
 void putmap(int sx, int sy, int id)
 {
+    int sm[105][105];
+    fill(sm[0],sm[0]+105*105,-2);
+    for(int i=1;i<=X;i++){
+        for(int j=1;j<=Y;j++){
+            if(fog[i][j])sm[(i-1)/5+1][(j-1)/5+1]=max(sm[(i-1)/5+1][(j-1)/5+1],-1);
+            if(i==sx&&j==sy&&sx!=0&&sy!=0)sm[(i-1)/5+1][(j-1)/5+1]=max(sm[(i-1)/5+1][(j-1)/5+1],20);
+            if(mp[i][j].belong==id)sm[(i-1)/5+1][(j-1)/5+1]=max(sm[(i-1)/5+1][(j-1)/5+1],19);
+            if(ifteam[Inteam[id]].find(mp[i][j].belong) != ifteam[Inteam[id]].end()||isreplay==2&&mp[i][j].belong!=0)sm[(i-1)/5+1][(j-1)/5+1]=max(sm[(i-1)/5+1][(j-1)/5+1],mp[i][j].belong%11);
+        }
+    }
+    int bgmp=0;
     gotoxy(0, 0);
     memset(score, 0, sizeof(score));
     if (!sight[id][sx][sy])
@@ -684,11 +696,55 @@ void putmap(int sx, int sy, int id)
                             printf(" "), lft = true;
                         printf("     ");
                     }
+                if(X>15||Y>15){
+                    printf("   ");
+                    bgmp++;
+                    if(bgmp<=(X-1)/5+1){
+                        for(int j=1;j<=(Y-1)/5+1;j++){
+                            if(sm[bgmp][j]==20)SetColor(0xc, 0, 1);
+                            else if(sm[bgmp][j]==19)SetColor(cls[id%11], 0, 1);
+                            else if(sm[bgmp][j]==-2)Setcolor();
+                            else if(sm[bgmp][j]==-1)SetColor(0xd, 0xd, 2);
+                            else SetColor(cls[sm[bgmp][j]],0,1);
+                            printf("o ");
+                        }
+                    }
+                    Setcolor(); 
+                }
                 printf("\n");
             }
             else
             {
-                printf("                                                                                                    \n");
+                lft = false;
+                for (int j = (starting ? 1 : (Y > 15 ? sy - 7 : 1)); j <= (starting ? 15 : (Y > 15 ? sy + 7 : Y)); j++)
+                    if (j >= 1 && j <= Y)
+                    {
+                        if (!lft)
+                            printf(" "), lft = true;
+                        printf("     ");
+                    }
+                    else
+                    {
+                        if (!lft)
+                            printf(" "), lft = true;
+                        printf("     ");
+                    }
+            	if(X>15||Y>15){
+                    printf("   ");
+                    bgmp++;
+                    if(bgmp<=(X-1)/5+1){
+                        for(int j=1;j<=(Y-1)/5+1;j++){
+                            if(sm[bgmp][j]==20)SetColor(0xc, 0, 1);
+                            else if(sm[bgmp][j]==19)SetColor(cls[id%11], 0, 1);
+                            else if(sm[bgmp][j]==-2)Setcolor();
+                            else if(sm[bgmp][j]==-1)SetColor(0xd, 0xd, 2);
+                            else SetColor(cls[sm[bgmp][j]],0,1);
+                            printf("o ");
+                        }
+                    }
+                    Setcolor(); 
+                }
+                printf("\n");
             }
             colprinted = true;
         }
@@ -708,7 +764,8 @@ void putmap(int sx, int sy, int id)
             }
             else
             {
-                printf(" ");
+                if (!lineprinted && i >= 1 && i <= X)
+                    printf(" "), lineprinted = true;
             }
             if (fog[i][j])
                 SetColor(0xd, 0xd, 2);
@@ -1105,6 +1162,21 @@ void putmap(int sx, int sy, int id)
                 printf(" ");
             }
         }
+        if(X>15||Y>15){
+            printf("   ");
+            bgmp++;
+            if(bgmp<=(X-1)/5+1){
+                for(int j=1;j<=(Y-1)/5+1;j++){
+                    if(sm[bgmp][j]==20)SetColor(0xc, 0, 1);
+                    else if(sm[bgmp][j]==19)SetColor(cls[id%11], 0, 1);
+                    else if(sm[bgmp][j]==-2)Setcolor();
+                    else if(sm[bgmp][j]==-1)SetColor(0xd, 0xd, 2);
+                    else SetColor(cls[sm[bgmp][j]],0,1);
+                    printf("o ");
+                }
+            }
+            Setcolor(); 
+        }
         printf("\n");
         if (!opt)
         {
@@ -1122,10 +1194,55 @@ void putmap(int sx, int sy, int id)
                         printf(" "), lft = true;
                     printf("     ");
                 }
+            if(X>15||Y>15){
+                printf("   ");
+                bgmp++;
+                if(bgmp<=(X-1)/5+1){
+                    for(int j=1;j<=(Y-1)/5+1;j++){
+                        if(sm[bgmp][j]==20)SetColor(0xc, 0, 1);
+                        else if(sm[bgmp][j]==19)SetColor(cls[id%11], 0, 1);
+                        else if(sm[bgmp][j]==-2)Setcolor();
+                        else if(sm[bgmp][j]==-1)SetColor(0xd, 0xd, 2);
+                        else SetColor(cls[sm[bgmp][j]],0,1);
+                        printf("o ");
+                    }
+                }
+                Setcolor(); 
+            }
             printf("\n");
         }
-        else
-            printf("                                                                                                    \n");
+        else{
+            lft = false;
+            for (int j = (starting ? 1 : (Y > 15 ? sy - 7 : 1)); j <= (starting ? 15 : (Y > 15 ? sy + 7 : Y)); j++)
+                if (i >= 1 && i <= X && j >= 1 && j <= Y)
+                {
+                    if (!lft)
+                        printf(" "), lft = true;
+                    printf("     ");
+                }
+                else
+                {
+                    if (!lft)
+                        printf(" "), lft = true;
+                    printf("     ");
+                }
+            if(X>15||Y>15){
+                printf("   ");
+                bgmp++;
+                if(bgmp<=(X-1)/5+1){
+                    for(int j=1;j<=(Y-1)/5+1;j++){
+                        if(sm[bgmp][j]==20)SetColor(0xc, 0, 1);
+                        else if(sm[bgmp][j]==19)SetColor(cls[id%11], 0, 1);
+                        else if(sm[bgmp][j]==-2)Setcolor();
+                        else if(sm[bgmp][j]==-1)SetColor(0xd, 0xd, 2);
+                        else SetColor(cls[sm[bgmp][j]],0,1);
+                        printf("o ");
+                    }
+                }
+                Setcolor(); 
+            }
+            printf("\n");
+	    }
     }
     if (starting || isreplay == 2)
         return;
