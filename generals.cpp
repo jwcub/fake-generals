@@ -2265,6 +2265,7 @@ int main()
         {
             isPaint = true;
             mapmode = Blank;
+            congen();
         }
     }
     memset(sight, 0, sizeof(sight));
@@ -2272,6 +2273,7 @@ int main()
     int turn = 1;
     int currentplayer = 1;
     objectnum = int(double(X * Y) * objectpr);
+    alivegennum = gennum, aliveteamnum = teamnum;
     if (isreplay == 1)
     {
         for (int k = 1; k <= gennum; k++)
@@ -2429,13 +2431,13 @@ int main()
             for (int i = 1; i <= X; i++)
                 for (int j = 1; j <= Y; j++)
                 {
-                    if (((mp[i][j].type == General || mp[i][j].type == 5) && mapmode != 5 && mapmode != 6) || (mp[i][j].type == General && (mapmode == 5 || mapmode == 6) && mp[i][j].tmp < playermaxhp[mp[i][j].belong]))
+                    if (((mp[i][j].type == General || mp[i][j].type == 5) && mapmode != 5 && mapmode != 6 && mapmode != CPoints) || (mp[i][j].type == General && (mapmode == 5 || mapmode == 6 || mapmode == CPoints) && mp[i][j].tmp < playermaxhp[mp[i][j].belong]))
                         mp[i][j].tmp++;
                     else if (mp[i][j].type == Land && turn % 25 == 0)
                         mp[i][j].tmp++;
                     for (int k = 1; k <= gennum; k++)
                         sight[k][i][j] = false;
-                    if ((mapmode == 5 || mapmode == 6) && mp[i][j].type == General && mp[i][j].tmp > playermaxhp[mp[i][j].belong])
+                    if ((mapmode == 5 || mapmode == 6 || mapmode == CPoints) && mp[i][j].type == General && mp[i][j].tmp > playermaxhp[mp[i][j].belong])
                         mp[i][j].tmp = playermaxhp[mp[i][j].belong];
                 }
             for (int i = 1; i <= X; i++)
@@ -2497,7 +2499,7 @@ int main()
                         blindtimeremain[i] = -1;
             if (mapmode == 5 && turn % kttime == 0)
                 spawnkt();
-            if (isPaint)
+            if (isPaint && turn)
             {
                 int tmp = -1;
                 bool isOne = true;
