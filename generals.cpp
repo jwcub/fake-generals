@@ -17,10 +17,10 @@
 #include <sstream>
 #include <fstream>
 #define KEY_DOWN(VK_NONAME) ((GetAsyncKeyState(VK_NONAME) & 0x8000) ? 1 : 0)
-using std::fill;
 using std::cin;
 using std::cout;
 using std::endl;
+using std::fill;
 using std::ifstream;
 using std::ios;
 using std::make_pair;
@@ -657,16 +657,64 @@ bool cmpteam(const teamscore &s1, const teamscore &s2)
 void putmap(int sx, int sy, int id)
 {
     int sm[105][105];
-    fill(sm[0],sm[0]+105*105,-2);
-    for(int i=1;i<=X;i++){
-        for(int j=1;j<=Y;j++){
-            if(fog[i][j])sm[(i-1)/5+1][(j-1)/5+1]=max(sm[(i-1)/5+1][(j-1)/5+1],-1);
-            if(i==sx&&j==sy&&sx!=0&&sy!=0)sm[(i-1)/5+1][(j-1)/5+1]=max(sm[(i-1)/5+1][(j-1)/5+1],20);
-            if(mp[i][j].belong==id)sm[(i-1)/5+1][(j-1)/5+1]=max(sm[(i-1)/5+1][(j-1)/5+1],19);
-            if(ifteam[Inteam[id]].find(mp[i][j].belong) != ifteam[Inteam[id]].end()||isreplay==2&&mp[i][j].belong!=0)sm[(i-1)/5+1][(j-1)/5+1]=max(sm[(i-1)/5+1][(j-1)/5+1],mp[i][j].belong%11);
+    char miniMap[105][105];
+    int bgmp = 0;
+    if (X > 15 || Y > 15)
+    {
+        fill(sm[0], sm[0] + 105 * 105, -2);
+        for (int i = 1; i <= (X - 1) / 5 + 1; i++)
+            for (int j = 1; j <= (Y - 1) / 5 + 1; j++)
+                miniMap[i][j] = ' ';
+        for (int i = 1; i <= X; i++)
+        {
+            for (int j = 1; j <= Y; j++)
+            {
+                if (fog[i][j])
+                {
+                    miniMap[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = 'F';
+                    sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = max(sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1], -1);
+                }
+                if (i == sx && j == sy && sx != 0 && sy != 0)
+                {
+                    miniMap[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = 'O';
+                    sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = max(sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1], 20);
+                }
+                if (mp[i][j].belong == id)
+                {
+                    miniMap[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = 'O';
+                    sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = max(sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1], 19);
+                }
+                if (ifteam[Inteam[id]].find(mp[i][j].belong) != ifteam[Inteam[id]].end() || isreplay == 2 && mp[i][j].belong != 0)
+                {
+                    miniMap[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = 'O';
+                    if ((mapmode == Pubg || mapmode == CFlag || mapmode == CPoints) && fvf)
+                        sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = max(sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1], Inteam[mp[i][j].belong] % 11);
+                    else
+                        sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = max(sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1], mp[i][j].belong % 11);
+                }
+                if (mp[i][j].type == General && mp[i][j].belong == id)
+                {
+                    miniMap[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = 'X';
+                    if ((mapmode == Pubg || mapmode == CFlag || mapmode == CPoints) && fvf)
+                        sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = Inteam[mp[i][j].belong] % 11;
+                    else
+                        sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = id % 11;
+                }
+                if (mp[i][j].type == Points || mp[i][j].type == Flag)
+                {
+                    sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = max(sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1], mp[i][j].belong % 11);
+                    miniMap[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = '+';
+                }
+                if (mp[i][j].type == General && ifgetflag[mp[i][j].belong])
+                {
+                    sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = ifgetflag[mp[i][j].belong] % 11;
+                    miniMap[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = '+';
+                }
+                if (iskt[i][j])
+                    miniMap[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = '!';
+            }
         }
     }
-    int bgmp=0;
     gotoxy(0, 0);
     memset(score, 0, sizeof(score));
     if (!sight[id][sx][sy])
@@ -696,20 +744,28 @@ void putmap(int sx, int sy, int id)
                             printf(" "), lft = true;
                         printf("     ");
                     }
-                if(X>15||Y>15){
+                if (X > 15 || Y > 15)
+                {
                     printf("   ");
                     bgmp++;
-                    if(bgmp<=(X-1)/5+1){
-                        for(int j=1;j<=(Y-1)/5+1;j++){
-                            if(sm[bgmp][j]==20)SetColor(0xc, 0, 1);
-                            else if(sm[bgmp][j]==19)SetColor(cls[id%11], 0, 1);
-                            else if(sm[bgmp][j]==-2)Setcolor();
-                            else if(sm[bgmp][j]==-1)SetColor(0xd, 0xd, 2);
-                            else SetColor(cls[sm[bgmp][j]],0,1);
-                            printf("o ");
+                    if (bgmp <= (X - 1) / 5 + 1)
+                    {
+                        for (int j = 1; j <= (Y - 1) / 5 + 1; j++)
+                        {
+                            if (sm[bgmp][j] == 20)
+                                SetColor(0xc, 0, 1);
+                            else if (sm[bgmp][j] == 19)
+                                SetColor(cls[id % 11], 0, 1);
+                            else if (sm[bgmp][j] == -2)
+                                Setcolor();
+                            else if (sm[bgmp][j] == -1)
+                                SetColor(0xd, 0xd, 2);
+                            else
+                                SetColor(cls[sm[bgmp][j]], 0, 1);
+                            printf("%c ", miniMap[bgmp][j]);
                         }
                     }
-                    Setcolor(); 
+                    Setcolor();
                 }
                 printf("\n");
             }
@@ -729,20 +785,28 @@ void putmap(int sx, int sy, int id)
                             printf(" "), lft = true;
                         printf("     ");
                     }
-            	if(X>15||Y>15){
+                if (X > 15 || Y > 15)
+                {
                     printf("   ");
                     bgmp++;
-                    if(bgmp<=(X-1)/5+1){
-                        for(int j=1;j<=(Y-1)/5+1;j++){
-                            if(sm[bgmp][j]==20)SetColor(0xc, 0, 1);
-                            else if(sm[bgmp][j]==19)SetColor(cls[id%11], 0, 1);
-                            else if(sm[bgmp][j]==-2)Setcolor();
-                            else if(sm[bgmp][j]==-1)SetColor(0xd, 0xd, 2);
-                            else SetColor(cls[sm[bgmp][j]],0,1);
-                            printf("o ");
+                    if (bgmp <= (X - 1) / 5 + 1)
+                    {
+                        for (int j = 1; j <= (Y - 1) / 5 + 1; j++)
+                        {
+                            if (sm[bgmp][j] == 20)
+                                SetColor(0xc, 0, 1);
+                            else if (sm[bgmp][j] == 19)
+                                SetColor(cls[id % 11], 0, 1);
+                            else if (sm[bgmp][j] == -2)
+                                Setcolor();
+                            else if (sm[bgmp][j] == -1)
+                                SetColor(0xd, 0xd, 2);
+                            else
+                                SetColor(cls[sm[bgmp][j]], 0, 1);
+                            printf("%c ", miniMap[bgmp][j]);
                         }
                     }
-                    Setcolor(); 
+                    Setcolor();
                 }
                 printf("\n");
             }
@@ -769,7 +833,7 @@ void putmap(int sx, int sy, int id)
             }
             if (fog[i][j])
                 SetColor(0xd, 0xd, 2);
-            if (sx == i && sy == j)
+            if (sx == i && sy == j && !(mapmode == Pubg || mapmode == CFlag || mapmode == CPoints))
             {
                 SetColor(0xc, 0, 1);
                 if (mp[i][j].type == Empty_land)
@@ -793,7 +857,7 @@ void putmap(int sx, int sy, int id)
                     }
                     else
                     {
-                        if ((mapmode == 7 || mapmode == 6 || mapmode == 5) && mode == Tdm)
+                        if ((mapmode == 7 || mapmode == 6) && mode == Tdm || mapmode == Pubg && fvf)
                             SetColor(cls[Inteam[mp[i][j].belong] % 11], 0, 100);
                         printf("{");
                         getnum(mp[i][j].tmp);
@@ -880,7 +944,7 @@ void putmap(int sx, int sy, int id)
                 {
                     if (ifgetflag[mp[i][j].belong])
                     {
-                        SetColor(cls[mp[i][j].belong % 11], 0, 1);
+                        SetColor(cls[Inteam[mp[i][j].belong] % 11], 0, 100);
                         printf("<");
                         getnum(mp[i][j].tmp);
                         printf(">");
@@ -889,7 +953,7 @@ void putmap(int sx, int sy, int id)
                     else if (sight[id][i][j])
                     {
                         SetColor(cls[mp[i][j].belong % 11], 0, 1);
-                        if ((mapmode == CFlag || mapmode == CPoints) && mode == Tdm)
+                        if ((mapmode == CFlag || mapmode == CPoints) && mode == Tdm || mapmode == Pubg && fvf)
                             SetColor(cls[Inteam[mp[i][j].belong] % 11], 0, 100);
                         printf("{");
                         getnum(mp[i][j].tmp);
@@ -1162,20 +1226,28 @@ void putmap(int sx, int sy, int id)
                 printf(" ");
             }
         }
-        if(X>15||Y>15){
+        if (X > 15 || Y > 15)
+        {
             printf("   ");
             bgmp++;
-            if(bgmp<=(X-1)/5+1){
-                for(int j=1;j<=(Y-1)/5+1;j++){
-                    if(sm[bgmp][j]==20)SetColor(0xc, 0, 1);
-                    else if(sm[bgmp][j]==19)SetColor(cls[id%11], 0, 1);
-                    else if(sm[bgmp][j]==-2)Setcolor();
-                    else if(sm[bgmp][j]==-1)SetColor(0xd, 0xd, 2);
-                    else SetColor(cls[sm[bgmp][j]],0,1);
-                    printf("o ");
+            if (bgmp <= (X - 1) / 5 + 1)
+            {
+                for (int j = 1; j <= (Y - 1) / 5 + 1; j++)
+                {
+                    if (sm[bgmp][j] == 20)
+                        SetColor(0xc, 0, 1);
+                    else if (sm[bgmp][j] == 19)
+                        SetColor(cls[id % 11], 0, 1);
+                    else if (sm[bgmp][j] == -2)
+                        Setcolor();
+                    else if (sm[bgmp][j] == -1)
+                        SetColor(0xd, 0xd, 2);
+                    else
+                        SetColor(cls[sm[bgmp][j]], 0, 1);
+                    printf("%c ", miniMap[bgmp][j]);
                 }
             }
-            Setcolor(); 
+            Setcolor();
         }
         printf("\n");
         if (!opt)
@@ -1194,24 +1266,33 @@ void putmap(int sx, int sy, int id)
                         printf(" "), lft = true;
                     printf("     ");
                 }
-            if(X>15||Y>15){
+            if (X > 15 || Y > 15)
+            {
                 printf("   ");
                 bgmp++;
-                if(bgmp<=(X-1)/5+1){
-                    for(int j=1;j<=(Y-1)/5+1;j++){
-                        if(sm[bgmp][j]==20)SetColor(0xc, 0, 1);
-                        else if(sm[bgmp][j]==19)SetColor(cls[id%11], 0, 1);
-                        else if(sm[bgmp][j]==-2)Setcolor();
-                        else if(sm[bgmp][j]==-1)SetColor(0xd, 0xd, 2);
-                        else SetColor(cls[sm[bgmp][j]],0,1);
-                        printf("o ");
+                if (bgmp <= (X - 1) / 5 + 1)
+                {
+                    for (int j = 1; j <= (Y - 1) / 5 + 1; j++)
+                    {
+                        if (sm[bgmp][j] == 20)
+                            SetColor(0xc, 0, 1);
+                        else if (sm[bgmp][j] == 19)
+                            SetColor(cls[id % 11], 0, 1);
+                        else if (sm[bgmp][j] == -2)
+                            Setcolor();
+                        else if (sm[bgmp][j] == -1)
+                            SetColor(0xd, 0xd, 2);
+                        else
+                            SetColor(cls[sm[bgmp][j]], 0, 1);
+                        printf("%c ", miniMap[bgmp][j]);
                     }
                 }
-                Setcolor(); 
+                Setcolor();
             }
             printf("\n");
         }
-        else{
+        else
+        {
             lft = false;
             for (int j = (starting ? 1 : (Y > 15 ? sy - 7 : 1)); j <= (starting ? 15 : (Y > 15 ? sy + 7 : Y)); j++)
                 if (i >= 1 && i <= X && j >= 1 && j <= Y)
@@ -1226,23 +1307,31 @@ void putmap(int sx, int sy, int id)
                         printf(" "), lft = true;
                     printf("     ");
                 }
-            if(X>15||Y>15){
+            if (X > 15 || Y > 15)
+            {
                 printf("   ");
                 bgmp++;
-                if(bgmp<=(X-1)/5+1){
-                    for(int j=1;j<=(Y-1)/5+1;j++){
-                        if(sm[bgmp][j]==20)SetColor(0xc, 0, 1);
-                        else if(sm[bgmp][j]==19)SetColor(cls[id%11], 0, 1);
-                        else if(sm[bgmp][j]==-2)Setcolor();
-                        else if(sm[bgmp][j]==-1)SetColor(0xd, 0xd, 2);
-                        else SetColor(cls[sm[bgmp][j]],0,1);
-                        printf("o ");
+                if (bgmp <= (X - 1) / 5 + 1)
+                {
+                    for (int j = 1; j <= (Y - 1) / 5 + 1; j++)
+                    {
+                        if (sm[bgmp][j] == 20)
+                            SetColor(0xc, 0, 1);
+                        else if (sm[bgmp][j] == 19)
+                            SetColor(cls[id % 11], 0, 1);
+                        else if (sm[bgmp][j] == -2)
+                            Setcolor();
+                        else if (sm[bgmp][j] == -1)
+                            SetColor(0xd, 0xd, 2);
+                        else
+                            SetColor(cls[sm[bgmp][j]], 0, 1);
+                        printf("%c ", miniMap[bgmp][j]);
                     }
                 }
-                Setcolor(); 
+                Setcolor();
             }
             printf("\n");
-	    }
+        }
     }
     if (starting || isreplay == 2)
         return;
@@ -2183,7 +2272,7 @@ void savemap()
     if (isfirstsave)
     {
         outfile.open("Map", ios::out | ios::trunc), isfirstsave = false;
-        outfile << mode << " " << mapmode << endl;
+        outfile << mode << " " << mapmode << " " << fvf << endl;
     }
     else
         outfile.open("Map", ios::out | ios::app);
@@ -2426,7 +2515,7 @@ int main()
         ifstream infile;
         infile.open("Map", ios::in);
         int _mode, _mapmode;
-        infile >> _mode >> _mapmode;
+        infile >> _mode >> _mapmode >> fvf;
         mode = (game_mode)_mode;
         mapmode = (map_mode)_mapmode;
         if (mode == 2)
