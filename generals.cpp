@@ -100,7 +100,8 @@ struct node
         return;
     }
 } mp[105][105];
-int X = 15, Y = 15;     //地图的长和宽。如果以迷宫地图或端午地图游玩，请确保地图的长和宽相等
+
+int X = 15, Y = 15;     //地图的长和宽。如果以迷宫地图，请确保地图的长和宽均为奇数
 double wallpr = 0.05;   //墙的密度
 double citypr = 0.05;   //城市的密度
 double objectpr = 0.06; //道具的密度
@@ -472,9 +473,9 @@ void convdragon()
             convdragon();
             return;
         }
-        int t1 = randnum(1, X - 2) + 1, t2 = randnum(1, X - 2) + 1;
+        int t1 = randnum(1, X - 2) + 1, t2 = randnum(1, Y - 2) + 1;
         while (mp[t1][t2].type != Empty_land || (mp[t1 + 1][t2].type != Empty_land && mp[t1 - 1][t2].type != Empty_land && mp[t1][t2 + 1].type != Empty_land && mp[t1][t2 + 1].type != Empty_land))
-            t1 = randnum(1, X - 2) + 1, t2 = randnum(1, X - 2) + 1;
+            t1 = randnum(1, X - 2) + 1, t2 = randnum(1, Y - 2) + 1;
         if (i == 1)
         {
             mp[t1][t2].belong = i;
@@ -505,13 +506,13 @@ void convdragon()
     }
     for (int i = 1; i <= gennum; ++i)
     {
-        for (int j = 1; j <= min(X * X / gennum / 10, 8); ++j)
+        for (int j = 1; j <= min(X * Y / gennum / 10, 8); ++j)
         {
-            int t1 = randnum(1, X - 2) + 1, t2 = randnum(1, X - 2) + 1;
+            int t1 = randnum(1, X - 2) + 1, t2 = randnum(1, Y - 2) + 1;
             while (mp[t1][t2].belong != 0 || mp[t1][t2].type != Empty_land)
             {
                 t1 = randnum(1, X - 2) + 1;
-                t2 = randnum(1, X - 2) + 1;
+                t2 = randnum(1, Y - 2) + 1;
             }
             if (j == 1)
             {
@@ -2411,7 +2412,6 @@ int main()
     }
     if (mapopt == 2)
         opt = true;
-    system("cls");
     if (isreplay == 1)
     {
         convmap();
@@ -2457,7 +2457,6 @@ int main()
                 if (miniMapOpt == 1 || miniMapOpt == 2)
                     break;
             }
-            system("cls");
         }
         for (int k = 1; k <= gennum; k++)
         {
@@ -2481,6 +2480,7 @@ int main()
             pubgconv();
         if (mapmode == 7)
             pointsmatchconv();
+        system("cls");    
     }
     if (isreplay == 2)
     {
@@ -2504,8 +2504,8 @@ int main()
                 if (miniMapOpt == 1 || miniMapOpt == 2)
                     break;
             }
-            system("cls");
         }
+        system("cls");
         if (mode == 2)
             teaming();
         while (1)
