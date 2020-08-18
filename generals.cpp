@@ -168,6 +168,7 @@ string myto_string(int x)
     return ans;
 }
 int order[105];
+t;
 int dist(int xx1, int yy1, int xx2, int yy2)
 {
     return abs(xx1 - xx2) + abs(yy1 - yy2);
