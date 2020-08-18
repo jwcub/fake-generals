@@ -654,17 +654,40 @@ bool cmpteam(const teamscore &s1, const teamscore &s2)
 {
     return s1.score > s2.score;
 }
+int sm[105][105];
+char miniMap[105][105];
+bool isMiniMap;
+void printCurrentMiniMap(int bgmp, int id)
+{
+    for (int j = 1; j <= (Y - 1) / 5 + 1; j++)
+    {
+        if (sm[bgmp][j] == 20)
+            SetColor(0xc, 0, 1);
+        else if (sm[bgmp][j] == 19)
+            SetColor(cls[id % 11], 0, 1);
+        else if (sm[bgmp][j] == -2)
+            Setcolor();
+        else if (sm[bgmp][j] == -1)
+            SetColor(0xd, 0xd, 2);
+        else
+            SetColor(cls[sm[bgmp][j]], 0, 1);
+        printf("%c ", miniMap[bgmp][j]);
+        Setcolor();
+    }
+    return;
+}
+bool isCleared;
 void putmap(int sx, int sy, int id)
 {
-    int sm[105][105];
-    char miniMap[105][105];
     int bgmp = 0;
-    if (X > 15 || Y > 15)
+    bool clearing = false;
+    if ((X > 15 || Y > 15) && isMiniMap)
     {
+        isCleared = false;
         fill(sm[0], sm[0] + 105 * 105, -2);
         for (int i = 1; i <= (X - 1) / 5 + 1; i++)
             for (int j = 1; j <= (Y - 1) / 5 + 1; j++)
-                miniMap[i][j] = 'O';
+                miniMap[i][j] = (opt ? ' ' : 'O');
         for (int i = 1; i <= X; i++)
         {
             for (int j = 1; j <= Y; j++)
@@ -716,6 +739,15 @@ void putmap(int sx, int sy, int id)
             }
         }
     }
+    else if (!isCleared && !isMiniMap)
+    {
+        isCleared = true;
+        clearing = true;
+        fill(sm[0], sm[0] + 105 * 105, -2);
+        for (int i = 1; i <= (X - 1) / 5 + 1; i++)
+            for (int j = 1; j <= (Y - 1) / 5 + 1; j++)
+                miniMap[i][j] = ' ';
+    }
     gotoxy(0, 0);
     memset(score, 0, sizeof(score));
     if (!sight[id][sx][sy])
@@ -745,28 +777,14 @@ void putmap(int sx, int sy, int id)
                             printf(" "), lft = true;
                         printf("     ");
                     }
-                if (X > 15 || Y > 15)
+                if ((X > 15 || Y > 15) && isMiniMap || !isMiniMap && clearing)
                 {
                     printf("   ");
                     bgmp++;
                     if (bgmp <= (X - 1) / 5 + 1)
                     {
-                        for (int j = 1; j <= (Y - 1) / 5 + 1; j++)
-                        {
-                            if (sm[bgmp][j] == 20)
-                                SetColor(0xc, 0, 1);
-                            else if (sm[bgmp][j] == 19)
-                                SetColor(cls[id % 11], 0, 1);
-                            else if (sm[bgmp][j] == -2)
-                                Setcolor();
-                            else if (sm[bgmp][j] == -1)
-                                SetColor(0xd, 0xd, 2);
-                            else
-                                SetColor(cls[sm[bgmp][j]], 0, 1);
-                            printf("%c ", miniMap[bgmp][j]);
-                        }
+                        printCurrentMiniMap(bgmp, id);
                     }
-                    Setcolor();
                 }
                 printf("\n");
             }
@@ -786,28 +804,14 @@ void putmap(int sx, int sy, int id)
                             printf(" "), lft = true;
                         printf("     ");
                     }
-                if (X > 15 || Y > 15)
+                if ((X > 15 || Y > 15) && isMiniMap || !isMiniMap && clearing)
                 {
                     printf("   ");
                     bgmp++;
                     if (bgmp <= (X - 1) / 5 + 1)
                     {
-                        for (int j = 1; j <= (Y - 1) / 5 + 1; j++)
-                        {
-                            if (sm[bgmp][j] == 20)
-                                SetColor(0xc, 0, 1);
-                            else if (sm[bgmp][j] == 19)
-                                SetColor(cls[id % 11], 0, 1);
-                            else if (sm[bgmp][j] == -2)
-                                Setcolor();
-                            else if (sm[bgmp][j] == -1)
-                                SetColor(0xd, 0xd, 2);
-                            else
-                                SetColor(cls[sm[bgmp][j]], 0, 1);
-                            printf("%c ", miniMap[bgmp][j]);
-                        }
+                        printCurrentMiniMap(bgmp, id);
                     }
-                    Setcolor();
                 }
                 printf("\n");
             }
@@ -1227,28 +1231,14 @@ void putmap(int sx, int sy, int id)
                 printf(" ");
             }
         }
-        if (X > 15 || Y > 15)
+        if ((X > 15 || Y > 15) && isMiniMap || !isMiniMap && clearing)
         {
             printf("   ");
             bgmp++;
             if (bgmp <= (X - 1) / 5 + 1)
             {
-                for (int j = 1; j <= (Y - 1) / 5 + 1; j++)
-                {
-                    if (sm[bgmp][j] == 20)
-                        SetColor(0xc, 0, 1);
-                    else if (sm[bgmp][j] == 19)
-                        SetColor(cls[id % 11], 0, 1);
-                    else if (sm[bgmp][j] == -2)
-                        Setcolor();
-                    else if (sm[bgmp][j] == -1)
-                        SetColor(0xd, 0xd, 2);
-                    else
-                        SetColor(cls[sm[bgmp][j]], 0, 1);
-                    printf("%c ", miniMap[bgmp][j]);
-                }
+                printCurrentMiniMap(bgmp, id);
             }
-            Setcolor();
         }
         printf("\n");
         if (!opt)
@@ -1267,26 +1257,13 @@ void putmap(int sx, int sy, int id)
                         printf(" "), lft = true;
                     printf("     ");
                 }
-            if (X > 15 || Y > 15)
+            if ((X > 15 || Y > 15) && isMiniMap || !isMiniMap && clearing)
             {
                 printf("   ");
                 bgmp++;
                 if (bgmp <= (X - 1) / 5 + 1)
                 {
-                    for (int j = 1; j <= (Y - 1) / 5 + 1; j++)
-                    {
-                        if (sm[bgmp][j] == 20)
-                            SetColor(0xc, 0, 1);
-                        else if (sm[bgmp][j] == 19)
-                            SetColor(cls[id % 11], 0, 1);
-                        else if (sm[bgmp][j] == -2)
-                            Setcolor();
-                        else if (sm[bgmp][j] == -1)
-                            SetColor(0xd, 0xd, 2);
-                        else
-                            SetColor(cls[sm[bgmp][j]], 0, 1);
-                        printf("%c ", miniMap[bgmp][j]);
-                    }
+                    printCurrentMiniMap(bgmp, id);
                 }
                 Setcolor();
             }
@@ -1308,26 +1285,13 @@ void putmap(int sx, int sy, int id)
                         printf(" "), lft = true;
                     printf("     ");
                 }
-            if (X > 15 || Y > 15)
+            if ((X > 15 || Y > 15) && isMiniMap || !isMiniMap && clearing)
             {
                 printf("   ");
                 bgmp++;
                 if (bgmp <= (X - 1) / 5 + 1)
                 {
-                    for (int j = 1; j <= (Y - 1) / 5 + 1; j++)
-                    {
-                        if (sm[bgmp][j] == 20)
-                            SetColor(0xc, 0, 1);
-                        else if (sm[bgmp][j] == 19)
-                            SetColor(cls[id % 11], 0, 1);
-                        else if (sm[bgmp][j] == -2)
-                            Setcolor();
-                        else if (sm[bgmp][j] == -1)
-                            SetColor(0xd, 0xd, 2);
-                        else
-                            SetColor(cls[sm[bgmp][j]], 0, 1);
-                        printf("%c ", miniMap[bgmp][j]);
-                    }
+                    printCurrentMiniMap(bgmp, id);
                 }
                 Setcolor();
             }
@@ -2303,6 +2267,7 @@ void savereplay()
     outfile.close();
     return;
 }
+int miniMapOpt;
 int main()
 {
     system("title generals");
@@ -2476,13 +2441,24 @@ int main()
         }
     }
     memset(sight, 0, sizeof(sight));
-    int keys[6] = {'W', 'S', 'A', 'D', 'Z', 'F'};
+    int keys[5] = {'W', 'S', 'A', 'D', 'Z'};
     int turn = 1;
     int currentplayer = 1;
     objectnum = int(double(X * Y) * objectpr);
     alivegennum = gennum, aliveteamnum = teamnum;
     if (isreplay == 1)
     {
+        if (X > 15 || Y > 15)
+        {
+            while (1)
+            {
+                printf("总览地图显示设置：1 = 始终显示总览地图（可能使游戏变卡）， 2 = 长按 M 键显示总览地图\n");
+                scanf("%d", &miniMapOpt);
+                if (miniMapOpt == 1 || miniMapOpt == 2)
+                    break;
+            }
+            system("cls");
+        }
         for (int k = 1; k <= gennum; k++)
         {
             player[k].playerid = k, player[k].halfselect = false, player[k].isbot = false;
@@ -2519,6 +2495,17 @@ int main()
         infile >> _mode >> _mapmode >> fvf;
         mode = (game_mode)_mode;
         mapmode = (map_mode)_mapmode;
+        if (X > 15 || Y > 15)
+        {
+            while (1)
+            {
+                printf("总览地图显示设置：1 = 始终显示总览地图（可能使游戏变卡）， 2 = 长按 M 键显示总览地图\n");
+                scanf("%d", &miniMapOpt);
+                if (miniMapOpt == 1 || miniMapOpt == 2)
+                    break;
+            }
+            system("cls");
+        }
         if (mode == 2)
             teaming();
         while (1)
@@ -2574,6 +2561,15 @@ int main()
                     if (flag)
                         break;
                 }
+            if (miniMapOpt == 1)
+                isMiniMap = true;
+            else if (miniMapOpt == 2)
+            {
+                if (KEY_DOWN('M'))
+                    isMiniMap = true;
+                else
+                    isMiniMap = false;
+            }
             Sleep(tpt);
         }
         infile.close();
@@ -2599,7 +2595,7 @@ int main()
                     ktremaintime = -1;
                 }
             }
-            for (int j = 0; j < 6; j++)
+            for (int j = 0; j < 5; j++)
                 if (inp == ' ' && KEY_DOWN(keys[j]))
                     inp = keys[j];
             if (ismouse && KEY_DOWN(MOUSE_MOVED))
@@ -2610,6 +2606,15 @@ int main()
                 ismouse = false;
             }
             Sleep(tpt);
+            if (miniMapOpt == 1)
+                isMiniMap = true;
+            else if (miniMapOpt == 2)
+            {
+                if (KEY_DOWN('M'))
+                    isMiniMap = true;
+                else
+                    isMiniMap = false;
+            }
             if (inp == 'Z')
                 player[currentplayer].halfselect ^= 1;
             else if (inp == 'F')
@@ -2820,7 +2825,7 @@ int main()
             }
         }
         bool ismouse = true;
-        for (int j = 0; j < 6; j++)
+        for (int j = 0; j < 5; j++)
             if (inp == ' ' && KEY_DOWN(keys[j]))
                 inp = keys[j];
         if (ismouse && KEY_DOWN(MOUSE_MOVED))
@@ -2831,6 +2836,15 @@ int main()
             ismouse = false;
         }
         Sleep(tpt);
+        if (miniMapOpt == 1)
+            isMiniMap = true;
+        else if (miniMapOpt == 2)
+        {
+            if (KEY_DOWN('M'))
+                isMiniMap = true;
+            else
+                isMiniMap = false;
+        }
         if (inp == 'Z')
             player[currentplayer].halfselect ^= 1;
         else if (inp == 'F')
