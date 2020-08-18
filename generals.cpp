@@ -693,50 +693,75 @@ void putmap(int sx, int sy, int id)
         {
             for (int j = 1; j <= Y; j++)
             {
-                if (fog[i][j])
+                char &currentBlock = miniMap[(i - 1) / 5 + 1][(j - 1) / 5 + 1];
+                if (iskt[i][j] && iskt[i - 1][j - 1] && iskt[i + 1][j + 1])
                 {
-                    miniMap[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = 'F';
-                    sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = max(sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1], -1);
-                }
-                if (i == sx && j == sy && sx != 0 && sy != 0)
-                {
-                    miniMap[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = 'O';
-                    sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = max(sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1], 20);
-                }
-                if (mp[i][j].belong == id)
-                {
-                    miniMap[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = 'O';
-                    sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = max(sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1], 19);
-                }
-                if (ifteam[Inteam[id]].find(mp[i][j].belong) != ifteam[Inteam[id]].end() || isreplay == 2 && mp[i][j].belong != 0)
-                {
-                    miniMap[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = 'O';
-                    if ((mapmode == CFlag || mapmode == CPoints) || (mapmode == Pubg && fvf))
-                        sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = max(sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1], Inteam[mp[i][j].belong] % 11);
+                    currentBlock = '!';
+                    if (ktremaintime % 2 == 0)
+                        sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = 20;
                     else
-                        sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = max(sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1], mp[i][j].belong % 11);
-                }
-                if (mp[i][j].type == General && mp[i][j].belong == id)
-                {
-                    miniMap[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = 'X';
-                    if ((mapmode == CFlag || mapmode == CPoints) || (mapmode == Pubg && fvf))
-                        sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = Inteam[mp[i][j].belong] % 11;
-                    else
-                        sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = id % 11;
+                    {
+                        sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = -2;
+                    }
                 }
                 if (mp[i][j].type == Points || mp[i][j].type == Flag)
                 {
-                    if (mp[i][j].belong)
-                        sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = max(sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1], mp[i][j].belong % 11);
-                    miniMap[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = '+';
+                    if (currentBlock != '!')
+                    {
+                        if (mp[i][j].belong)
+                            sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = max(sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1], mp[i][j].belong % 11);
+                        currentBlock = '+';
+                    }
                 }
                 if (mp[i][j].type == General && ifgetflag[mp[i][j].belong])
                 {
-                    sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = ifgetflag[mp[i][j].belong] % 11;
-                    miniMap[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = '+';
+                    if (currentBlock != '!')
+                    {
+                        sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = ifgetflag[mp[i][j].belong] % 11;
+                        currentBlock = '+';
+                    }
                 }
-                if (iskt[i][j])
-                    miniMap[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = '!';
+                if (mp[i][j].type == General && mp[i][j].belong == id)
+                {
+                    if (currentBlock != '!' && currentBlock != '+')
+                    {
+                        currentBlock = 'X';
+                        if ((mapmode == CFlag || mapmode == CPoints) || (mapmode == Pubg && fvf))
+                            sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = Inteam[mp[i][j].belong] % 11;
+                        else
+                            sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = id % 11;
+                    }
+                }
+                if (ifteam[Inteam[id]].find(mp[i][j].belong) != ifteam[Inteam[id]].end() || isreplay == 2 && mp[i][j].belong != 0)
+                {
+                    if (currentBlock != '!' && currentBlock != '+' && currentBlock != 'X')
+                    {
+                        if (mapmode != Pubg && mapmode != CFlag && mapmode != CPoints && mp[i][j].type == General && gennum <= 8)
+                            currentBlock = 'X';
+                        else
+                            currentBlock = 'O';
+                        if ((mapmode == CFlag || mapmode == CPoints) || (mapmode == Pubg && fvf))
+                            sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = max(sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1], Inteam[mp[i][j].belong] % 11);
+                        else
+                            sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = max(sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1], mp[i][j].belong % 11);
+                    }
+                }
+                if (i == sx && j == sy && sx != 0 && sy != 0)
+                {
+                    if (currentBlock != '!' && currentBlock != '+' && currentBlock != 'X')
+                    {
+                        currentBlock = 'O';
+                        sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = max(sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1], 20);
+                    }
+                }
+                if (fog[i][j])
+                {
+                    if (currentBlock != '!' && currentBlock != '+' && currentBlock != 'X' && !(currentBlock == 'O' && sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1] != -2))
+                    {
+                        currentBlock = 'F';
+                        sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = max(sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1], -1);
+                    }
+                }
             }
         }
     }
@@ -2480,7 +2505,7 @@ int main()
             pubgconv();
         if (mapmode == 7)
             pointsmatchconv();
-        system("cls");    
+        system("cls");
     }
     if (isreplay == 2)
     {
