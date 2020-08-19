@@ -2368,8 +2368,14 @@ int main()
 {
     system("title generals");
     system("color 0f");
-    //normalobjects[1] = Health, normalobjects[2] = Ac, normalobjects[3] = Sword, normalobjects[4] = Light, normalobjects[5] = Pill, normalobjects[6] = Fh, normalobjects[7] = Send;
-    //objects[1] = Health, objects[2] = Ac, objects[3] = Sword, objects[4] = Exhealth, objects[5] = Exac, objects[6] = Exsword, objects[7] = Pill, objects[8] = Expill, objects[9] = Twoscope, objects[10] = Fh, objects[11] = Exfh, objects[12] = Send;
+    system("chcp 65001");
+    HANDLE hStdin = GetStdHandle(STD_INPUT_HANDLE); //https://blog.csdn.net/gxc1222/article/details/80999234
+    DWORD mode;
+    GetConsoleMode(hStdin, &mode);
+    mode &= ~ENABLE_QUICK_EDIT_MODE; //移除快速编辑模式
+    mode &= ~ENABLE_INSERT_MODE; //移除插入模式
+    mode &= ~ENABLE_MOUSE_INPUT;
+    SetConsoleMode(hStdin, mode);
     itObjects();
     srand(time(NULL));
     convmap();
