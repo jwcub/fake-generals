@@ -1511,6 +1511,7 @@ struct Player
         playerac[playerid] = playeratk[playerid] = playerfh[playerid] = 0;
         playermaxhp[playerid] = 100;
         ishavets[playerid] = false;
+        isHaveSend[playerid] = false;
         for (int i = 1; i <= X; i++)
             for (int j = 1; j <= Y; j++)
             {
