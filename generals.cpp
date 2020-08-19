@@ -162,14 +162,6 @@ void gotoxy(int x, int y)
     SetConsoleCursorPosition(hConsoleOut, csbiInfo.dwCursorPosition);
     return;
 }
-pair<int, int> getCurPos()
-{
-    HANDLE hStdout;
-    CONSOLE_SCREEN_BUFFER_INFO pBuffer;
-    hStdout = GetStdHandle(STD_OUTPUT_HANDLE);
-    GetConsoleScreenBufferInfo(hStdout, &pBuffer);
-    return make_pair(pBuffer.dwCursorPosition.X, pBuffer.dwCursorPosition.Y);
-}
 string myto_string(int x)
 {
     stringstream sst;
@@ -548,7 +540,7 @@ void generateQianHaoMap()
         for (int j = 1; j <= Y; j++)
             if (mp[i][j].type == General)
             {
-                vector<pair<int, int>> tmp;
+                vector<pair<int, int> > tmp;
                 for (int k = i - 1; k <= i + 1; k++)
                     for (int w = j - 1; w <= j + 1; w++)
                         if (k >= 1 && k <= X && w >= 1 && w <= Y && mp[k][w].type == Empty_land)
@@ -1360,12 +1352,10 @@ void putmap(int sx, int sy, int id)
     }
     if (starting || isreplay == 2)
         return;
-    pair<int, int> tmpPos = getCurPos();
-    // gotoxy(0, 2 * ((starting ? 15 : (X > 15 ? min(sx + 7, X) : X)) - (starting ? 1 : (X > 15 ? sx - 7 : 1)) + 1) + 1);
+    gotoxy(0, 2 * ((starting ? 15 : (X > 15 ? min(sx + 7, X) : X)) - (starting ? 1 : (X > 15 ? sx - 7 : 1)) + 1) + 1);
     for (int i = 1; i <= 9; i++)
         printf("                                                                                                    \n");
-    // gotoxy(0, 2 * ((starting ? 15 : (X > 15 ? min(sx + 7, X) : X)) - (starting ? 1 : (X > 15 ? sx - 7 : 1)) + 1) + 1);
-    gotoxy(tmpPos.first, tmpPos.second);
+    gotoxy(0, 2 * ((starting ? 15 : (X > 15 ? min(sx + 7, X) : X)) - (starting ? 1 : (X > 15 ? sx - 7 : 1)) + 1) + 1);
     if (mapmode != 7)
         for (int i = 1; i <= X; i++)
             for (int j = 1; j <= Y; j++)
@@ -1507,7 +1497,7 @@ struct Player
     int sx, sy;
     int inteam;
     bool flag[105][105];
-    queue<pair<int, int>> q;
+    queue<pair<int, int> > q;
     void botit()
     {
         sx = selectedx, sy = selectedy;
@@ -2383,7 +2373,7 @@ int main()
     DWORD mode;
     GetConsoleMode(hStdin, &mode);
     mode &= ~ENABLE_QUICK_EDIT_MODE; //移除快速编辑模式
-    mode &= ~ENABLE_INSERT_MODE;     //移除插入模式
+    mode &= ~ENABLE_INSERT_MODE; //移除插入模式
     mode &= ~ENABLE_MOUSE_INPUT;
     SetConsoleMode(hStdin, mode);
     itObjects();
@@ -2873,7 +2863,7 @@ int main()
                     if ((mp[i][j].type == Land || mp[i][j].type == General || mp[i][j].type == City) && mp[i][j].tmp > 0)
                         playerLand[mp[i][j].belong]++, maxLand = max(maxLand, playerLand[mp[i][j].belong]);
             if (maxLand == -1)
-                if (MessageBox(NULL, "No player won.Do you want to save replay?", "Game over", MB_OKCANCEL) == IDOK)
+                if (MessageBox(NULL, "没有玩家胜利。是否保存回放？", "欢呼", MB_OKCANCEL) == IDOK)
                     savereplay();
                 else
                     ;
@@ -2887,8 +2877,8 @@ int main()
                         {
                             winner += ", player" + myto_string(i);
                         }
-                winner += " won!Do you want to save replay?";
-                if (MessageBox(NULL, winner.c_str(), "Game over", MB_OKCANCEL) == IDOK)
+                winner += "赢了！是否保存回放？";
+                if (MessageBox(NULL, winner.c_str(), "欢呼", MB_OKCANCEL) == IDOK)
                     savereplay();
             }
             return 0;
@@ -2904,13 +2894,13 @@ int main()
                 }
         if (winner == -1)
         {
-            if (MessageBox(NULL, "No player won.Do you want to save replay?", "Game over", MB_OKCANCEL) == IDOK)
+            if (MessageBox(NULL, "没有玩家胜利。是否保存回放？", "欢呼", MB_OKCANCEL) == IDOK)
                 savereplay();
         }
         else
         {
-            string opt = "player" + myto_string(winner) + " won!Do you want to save replay?";
-            if (MessageBox(NULL, opt.c_str(), "Game over", MB_OKCANCEL) == IDOK)
+            string opt = "player" + myto_string(winner) + "赢了！是否保存回放？";
+            if (MessageBox(NULL, opt.c_str(), "欢呼", MB_OKCANCEL) == IDOK)
                 savereplay();
         }
         return 0;
@@ -3121,8 +3111,8 @@ int main()
                     }
                 if (opt != "")
                 {
-                    opt += " won!Do you want to save replay?";
-                    if (MessageBox(NULL, opt.c_str(), "Game over", MB_OKCANCEL) == IDOK)
+                    opt += "赢了！是否保存回放？";
+                    if (MessageBox(NULL, opt.c_str(), "欢呼", MB_OKCANCEL) == IDOK)
                         savereplay();
                     return 0;
                 }
@@ -3187,8 +3177,8 @@ int main()
                 }
             if (opt != "")
             {
-                opt += " won!Do you want to save replay?";
-                if (MessageBox(NULL, opt.c_str(), "Game over", MB_OKCANCEL) == IDOK)
+                opt += "赢了！是否保存回放？";
+                if (MessageBox(NULL, opt.c_str(), "欢呼", MB_OKCANCEL) == IDOK)
                     savereplay();
                 return 0;
             }
@@ -3276,7 +3266,7 @@ int main()
                 if ((mp[i][j].type == Land || mp[i][j].type == General || mp[i][j].type == City) && mp[i][j].tmp > 0)
                     teamLand[Inteam[mp[i][j].belong]]++, maxLand = max(maxLand, teamLand[Inteam[mp[i][j].belong]]);
         if (maxLand == -1)
-            if (MessageBox(NULL, "没有队伍胜利。Do you want to save replay?", "Game over", MB_OKCANCEL) == IDOK)
+            if (MessageBox(NULL, "没有队伍胜利。是否保存回放？", "欢呼", MB_OKCANCEL) == IDOK)
                 savereplay();
             else
                 ;
@@ -3290,8 +3280,8 @@ int main()
                     {
                         winner += ", team" + myto_string(i);
                     }
-            winner += " won!Do you want to save replay?";
-            if (MessageBox(NULL, winner.c_str(), "Game over", MB_OKCANCEL) == IDOK)
+            winner += "赢了！是否保存回放？";
+            if (MessageBox(NULL, winner.c_str(), "欢呼", MB_OKCANCEL) == IDOK)
                 savereplay();
         }
         return 0;
@@ -3307,11 +3297,11 @@ int main()
             }
     if (winner != -1)
     {
-        string opt = "team" + myto_string(winner) + " won!Do you want to save replay?";
-        if (MessageBox(NULL, opt.c_str(), "Game over", MB_OKCANCEL) == IDOK)
+        string opt = "team" + myto_string(winner) + "赢了！是否保存回放？";
+        if (MessageBox(NULL, opt.c_str(), "欢呼", MB_OKCANCEL) == IDOK)
             savereplay();
     }
-    else if (MessageBox(NULL, "没有队伍胜利。Do you want to save replay?", "Game over", MB_OKCANCEL) == IDOK)
+    else if (MessageBox(NULL, "没有队伍胜利。是否保存回放？", "欢呼", MB_OKCANCEL) == IDOK)
         savereplay();
     return 0;
 }
