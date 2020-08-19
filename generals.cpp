@@ -60,7 +60,8 @@ enum land_type
     Twoscope,
     Fh,
     Exfh,
-    Points
+    Points,
+    Send
 };
 enum game_mode
 {
@@ -121,7 +122,7 @@ game_mode mode;
 map_mode mapmode;
 bool teamdead[105];
 bool starting = true;
-map<int, land_type> objects, normalobjects;
+vector<land_type> objects, normalobjects;
 int blindtimeremain[105];
 int ktx, kty;
 bool ktiscoming = false;
@@ -131,6 +132,7 @@ int ktremaintime = -1;
 int isreplay;
 bool isPaint;
 int paintRemainTime;
+bool isHaveSend[105];
 int randnum(int l, int r)
 {
     return rand() % (r - l + 1) + l;
@@ -956,7 +958,16 @@ void putmap(int sx, int sy, int id)
                     else if (fog[i][j])
                         printf("████");
                     else if (sight[id][i][j] || opt)
-                        printf("    ");
+                    {
+                        if (isHaveSend[id])
+                        {
+                            SetColor(6, 0, 20000);
+                            printf("████");
+                            Setcolor();
+                        }
+                        else
+                            printf("    ");
+                    }
                     else
                     {
                         SetColor(15, 0, 1);
@@ -1247,6 +1258,21 @@ void putmap(int sx, int sy, int id)
                     if (mp[i][j].belong)
                         Setcolor();
                 }
+                else if (mp[i][j].type == Send)
+                {
+                    if (sight[id][i][j])
+                        printf("<S> ");
+                    else if (fog[i][j])
+                        printf("████");
+                    else if (sight[id][i][j] || opt)
+                        printf("    ");
+                    else
+                    {
+                        SetColor(15, 0, 1);
+                        printf("████");
+                        Setcolor();
+                    }
+                }
             }
             if (fog[i][j])
                 Setcolor();
@@ -1439,6 +1465,8 @@ void putmap(int sx, int sy, int id)
         printf("涂色模式还剩 %d 回合\n", paintRemainTime);
     if (isgz)
         printf("您已阵亡，观战中……\n");
+    if (isHaveSend[id])
+        printf("当前玩家持有闪现技能\n");
     return;
 }
 int alivegennum = gennum, aliveteamnum = teamnum;
@@ -1623,6 +1651,8 @@ struct Player
                         playerfh[dp->belong]++, dt->type = Empty_land, aliveobjectnum--;
                     if (dt->type == 19)
                         playerfh[dp->belong] += 3, dt->type = Empty_land, aliveobjectnum--;
+                    if (dt->type == Send)
+                        isHaveSend[dp->belong] = true, dt->type = Empty_land, aliveobjectnum--;
                     if (dt->type == 9)
                     {
                         if (dt->belong != Inteam[playerid] && !ifgetflag[playerid])
@@ -1735,6 +1765,8 @@ struct Player
                         playerfh[dp->belong]++, dt->type = Empty_land, aliveobjectnum--;
                     if (dt->type == 19)
                         playerfh[dp->belong] += 3, dt->type = Empty_land, aliveobjectnum--;
+                    if (dt->type == Send)
+                        isHaveSend[dp->belong] = true, dt->type = Empty_land, aliveobjectnum--;
                     if (dt->type == 9)
                     {
                         if (dt->belong != Inteam[playerid] && !ifgetflag[playerid])
@@ -1847,6 +1879,8 @@ struct Player
                         playerfh[dp->belong]++, dt->type = Empty_land, aliveobjectnum--;
                     if (dt->type == 19)
                         playerfh[dp->belong] += 3, dt->type = Empty_land, aliveobjectnum--;
+                    if (dt->type == Send)
+                        isHaveSend[dp->belong] = true, dt->type = Empty_land, aliveobjectnum--;
                     if (dt->type == 9)
                     {
                         if (dt->belong != Inteam[playerid] && !ifgetflag[playerid])
@@ -1959,6 +1993,8 @@ struct Player
                         playerfh[dp->belong]++, dt->type = Empty_land, aliveobjectnum--;
                     if (dt->type == 19)
                         playerfh[dp->belong] += 3, dt->type = Empty_land, aliveobjectnum--;
+                    if (dt->type == Send)
+                        isHaveSend[dp->belong] = true, dt->type = Empty_land, aliveobjectnum--;
                     if (dt->type == 9)
                     {
                         if (dt->belong != Inteam[playerid] && !ifgetflag[playerid])
@@ -2091,6 +2127,16 @@ void teaming()
     }
     return;
 }
+land_type getRadomObjects(const vector<land_type> &objs)
+{
+    int sz = objs.size();
+    return objs[randnum(0, sz - 1)];
+}
+void addObject(land_type tp, vector<land_type> &objs)
+{
+    objs.push_back(tp);
+    return;
+}
 void convobject()
 {
     while (aliveobjectnum < objectnum)
@@ -2120,7 +2166,7 @@ void convobject()
                 continue;
             while (1)
             {
-                mp[gx][gy].type = normalobjects[randnum(1, 6)];
+                mp[gx][gy].type = getRadomObjects(normalobjects);
                 if ((mp[gx][gy].type == 18 || mp[gx][gy].type == 19) && (mapmode == 6 || mapmode == 7))
                     continue;
                 break;
@@ -2139,7 +2185,7 @@ void convobject()
             continue;
         while (1)
         {
-            mp[px][py].type = normalobjects[randnum(1, 6)];
+            mp[px][py].type = getRadomObjects(normalobjects);
             if ((mp[px][py].type == 18 || mp[px][py].type == 19) && (mapmode == 6 || mapmode == 7))
                 continue;
             break;
@@ -2180,7 +2226,7 @@ void getkt()
     for (int i = ktx - 1; i <= ktx + 1; i++)
         for (int j = kty - 1; j <= kty + 1; j++)
         {
-            mp[i][j].type = objects[randnum(1, 11)];
+            mp[i][j].type = getRadomObjects(objects);
             iskt[i][j] = false;
         }
     return;
@@ -2293,13 +2339,37 @@ void savereplay()
     outfile.close();
     return;
 }
+void itObjects()
+{
+    addObject(Health, normalobjects);
+    addObject(Ac, normalobjects);
+    addObject(Sword, normalobjects);
+    addObject(Light, normalobjects);
+    addObject(Pill, normalobjects);
+    addObject(Fh, normalobjects);
+    addObject(Send, normalobjects);
+    addObject(Health, objects);
+    addObject(Ac, objects);
+    addObject(Sword, objects);
+    addObject(Pill, objects);
+    addObject(Fh, objects);
+    addObject(Send, objects);
+    addObject(Exhealth, objects);
+    addObject(Exac, objects);
+    addObject(Exsword, objects);
+    addObject(Exfh, objects);
+    addObject(Twoscope, objects);
+    addObject(Expill, objects);
+    return;
+}
 int miniMapOpt;
 int main()
 {
     system("title generals");
     system("color 0f");
-    normalobjects[1] = Health, normalobjects[2] = Ac, normalobjects[3] = Sword, normalobjects[4] = Light, normalobjects[5] = Pill, normalobjects[6] = Fh;
-    objects[1] = Health, objects[2] = Ac, objects[3] = Sword, objects[4] = Exhealth, objects[5] = Exac, objects[6] = Exsword, objects[7] = Pill, objects[8] = Expill, objects[9] = Twoscope, objects[10] = Fh, objects[11] = Exfh;
+    //normalobjects[1] = Health, normalobjects[2] = Ac, normalobjects[3] = Sword, normalobjects[4] = Light, normalobjects[5] = Pill, normalobjects[6] = Fh, normalobjects[7] = Send;
+    //objects[1] = Health, objects[2] = Ac, objects[3] = Sword, objects[4] = Exhealth, objects[5] = Exac, objects[6] = Exsword, objects[7] = Pill, objects[8] = Expill, objects[9] = Twoscope, objects[10] = Fh, objects[11] = Exfh, objects[12] = Send;
+    itObjects();
     srand(time(NULL));
     convmap();
     printf("即将进行鼠标校准……\n");
@@ -2626,9 +2696,23 @@ int main()
             if (ismouse && KEY_DOWN(MOUSE_MOVED))
             {
                 GetCursorPos(&p1);
-                player[currentplayer].selectedx = int(round((double(p1.y) - double(xx1)) / dx)) + 1 + (X > 15 ? player[currentplayer].selectedx - 8 : 0);
-                player[currentplayer].selectedy = int(round((double(p1.x) - double(yy1)) / dy)) + 1 + (Y > 15 ? player[currentplayer].selectedy - 8 : 0);
+                int sp = int(round((double(p1.y) - double(xx1)) / dx)) + 1 + (X > 15 ? player[currentplayer].selectedx - 8 : 0);
+                int sq = int(round((double(p1.x) - double(yy1)) / dy)) + 1 + (Y > 15 ? player[currentplayer].selectedy - 8 : 0);
+                player[currentplayer].selectedx = sp;
+                player[currentplayer].selectedy = sq;
                 ismouse = false;
+                if (isHaveSend[currentplayer] && sight[currentplayer][sp][sq] && mp[sp][sq].type == Empty_land)
+                {
+                    for (int i = 1; i <= X; i++)
+                        for (int j = 1; j <= Y; j++)
+                            if (mp[i][j].type == General && mp[i][j].belong == currentplayer)
+                            {
+                                swap(mp[i][j], mp[sp][sq]);
+                                i = X + 1;
+                                isHaveSend[currentplayer] = false;
+                                break;
+                            }
+                }
             }
             Sleep(tpt);
             if (miniMapOpt == 1)
@@ -2856,9 +2940,23 @@ int main()
         if (ismouse && KEY_DOWN(MOUSE_MOVED))
         {
             GetCursorPos(&p1);
-            player[currentplayer].selectedx = int(round((double(p1.y) - double(xx1)) / dx)) + 1 + (X > 15 ? player[currentplayer].selectedx - 8 : 0);
-            player[currentplayer].selectedy = int(round((double(p1.x) - double(yy1)) / dy)) + 1 + (Y > 15 ? player[currentplayer].selectedy - 8 : 0);
+            int sp = int(round((double(p1.y) - double(xx1)) / dx)) + 1 + (X > 15 ? player[currentplayer].selectedx - 8 : 0);
+            int sq = int(round((double(p1.x) - double(yy1)) / dy)) + 1 + (Y > 15 ? player[currentplayer].selectedy - 8 : 0);
+            player[currentplayer].selectedx = sp;
+            player[currentplayer].selectedy = sq;
             ismouse = false;
+            if (isHaveSend[currentplayer] && sight[currentplayer][sp][sq] && mp[sp][sq].type == Empty_land)
+            {
+                for (int i = 1; i <= X; i++)
+                    for (int j = 1; j <= Y; j++)
+                        if (mp[i][j].type == General && mp[i][j].belong == currentplayer)
+                        {
+                            swap(mp[i][j], mp[sp][sq]);
+                            i = X + 1;
+                            isHaveSend[currentplayer] = false;
+                            break;
+                        }
+            }
         }
         Sleep(tpt);
         if (miniMapOpt == 1)
