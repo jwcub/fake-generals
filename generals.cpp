@@ -3010,6 +3010,8 @@ int main()
                         sight[team[player[mp[i][j].belong].inteam].members[k]->playerid][i][j] = true;
                     if ((mapmode == 5 || mapmode == 6 || mapmode == 7) && blindtimeremain[mp[i][j].belong] > 0)
                         continue;
+                    if (mp[i][j].type == Points || mp[i][j].type == Flag || mp[i][j].type == Empty_flag)
+                        continue;
                     if ((mapmode == 5 || mapmode == 6 || mapmode == 7) && player[mp[i][j].belong].inteam == player[currentplayer].inteam)
                         for (int k = i - 2 - ishavets[currentplayer]; k <= i + 2 + ishavets[currentplayer]; k++)
                             for (int w = j - 2 - ishavets[currentplayer]; w <= j + 2 + ishavets[currentplayer]; w++)
