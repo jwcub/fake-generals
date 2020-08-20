@@ -740,7 +740,7 @@ void putmap(int sx, int sy, int id)
                         //     currentSM = Inteam[mp[i][j].belong] % 11;
                         // else
                         //     currentSM = mp[i][j].belong % 11;
-                        currentSM = 100;
+                        currentSM = max(currentSM, 100);
                     }
                 }
                 if (ifteam[Inteam[id]].find(mp[i][j].belong) != ifteam[Inteam[id]].end() || isreplay == 2 && mp[i][j].belong != 0)
@@ -752,7 +752,7 @@ void putmap(int sx, int sy, int id)
                         else
                             currentBlock = 'O';
                         if (mp[i][j].belong == id)
-                            currentSM = 100;
+                            currentSM = max(currentSM, 100);
                         if ((mapmode == CFlag || mapmode == CPoints) || (mapmode == Pubg && fvf))
                             currentSM = max(currentSM, Inteam[mp[i][j].belong] % 11);
                         else
