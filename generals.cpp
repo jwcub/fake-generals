@@ -546,7 +546,7 @@ void generateQianHaoMap()
                         if (k >= 1 && k <= X && w >= 1 && w <= Y && mp[k][w].type == Empty_land)
                         {
                             mp[k][w].type = Wall;
-                            if (dist(i, j, k, w) == 1 && (k != -1 && w != -1 && k != X && w != Y))
+                            if (dist(i, j, k, w) == 1 && (k != 1 && w != 1 && k != X && w != Y))
                                 tmp.push_back(make_pair(k, w));
                         }
                 int g = randnum(0, tmp.size() - 1);
