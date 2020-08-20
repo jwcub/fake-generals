@@ -959,7 +959,7 @@ void putmap(int sx, int sy, int id)
                         printf("████");
                     else if (sight[id][i][j] || opt)
                     {
-                        if (isHaveSend[id])
+                        if (isHaveSend[id] && sight[id][i][j])
                         {
                             SetColor(6, 0, 20000);
                             printf("████");
