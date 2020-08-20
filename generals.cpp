@@ -761,7 +761,7 @@ void putmap(int sx, int sy, int id)
                         currentSM = max(currentSM, 100);
                     }
                 }
-                if (ifteam[Inteam[id]].find(mp[i][j].belong) != ifteam[Inteam[id]].end() || isreplay == 2 && mp[i][j].belong != 0)
+                if (mp[i][j].belong == id || ifteam[Inteam[id]].find(mp[i][j].belong) != ifteam[Inteam[id]].end() || isreplay == 2 && mp[i][j].belong != 0)
                 {
                     if (currentBlock != '!' && currentBlock != '+' && currentBlock != 'X')
                     {
