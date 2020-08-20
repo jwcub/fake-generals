@@ -696,14 +696,15 @@ void putmap(int sx, int sy, int id)
             for (int j = 1; j <= Y; j++)
             {
                 char &currentBlock = miniMap[(i - 1) / 5 + 1][(j - 1) / 5 + 1];
+                int &currentSM = sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1];
                 if (iskt[i][j] && iskt[i - 1][j - 1] && iskt[i + 1][j + 1])
                 {
                     currentBlock = '!';
                     if (ktremaintime % 2 == 0)
-                        sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = 20;
+                        currentSM = 20;
                     else
                     {
-                        sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = -2;
+                        currentSM = -2;
                     }
                 }
                 if (mp[i][j].type == Points || mp[i][j].type == Flag)
@@ -711,7 +712,7 @@ void putmap(int sx, int sy, int id)
                     if (currentBlock != '!')
                     {
                         if (mp[i][j].belong)
-                            sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = mp[i][j].belong % 11;
+                            currentSM = mp[i][j].belong % 11;
                         currentBlock = '+';
                     }
                 }
@@ -719,7 +720,7 @@ void putmap(int sx, int sy, int id)
                 {
                     if (currentBlock != '!')
                     {
-                        sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = ifgetflag[mp[i][j].belong] % 11;
+                        currentSM = ifgetflag[mp[i][j].belong] % 11;
                         currentBlock = '+';
                     }
                 }
@@ -729,9 +730,9 @@ void putmap(int sx, int sy, int id)
                     {
                         currentBlock = 'X';
                         if ((mapmode == CFlag || mapmode == CPoints) || (mapmode == Pubg && fvf))
-                            sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = Inteam[mp[i][j].belong] % 11;
+                            currentSM = Inteam[mp[i][j].belong] % 11;
                         else
-                            sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = mp[i][j].belong % 11;
+                            currentSM = mp[i][j].belong % 11;
                     }
                 }
                 if (ifteam[Inteam[id]].find(mp[i][j].belong) != ifteam[Inteam[id]].end() || isreplay == 2 && mp[i][j].belong != 0)
@@ -743,9 +744,9 @@ void putmap(int sx, int sy, int id)
                         else
                             currentBlock = 'O';
                         if ((mapmode == CFlag || mapmode == CPoints) || (mapmode == Pubg && fvf))
-                            sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = Inteam[mp[i][j].belong] % 11;
+                            currentSM = max(currentSM, Inteam[mp[i][j].belong] % 11);
                         else
-                            sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = mp[i][j].belong % 11;
+                            currentSM = max(currentSM, mp[i][j].belong % 11);
                     }
                 }
                 if (i == sx && j == sy && sx != 0 && sy != 0)
@@ -753,15 +754,15 @@ void putmap(int sx, int sy, int id)
                     if (currentBlock != '!' && currentBlock != '+' && currentBlock != 'X')
                     {
                         currentBlock = 'O';
-                        sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = 20;
+                        currentSM = max(currentSM, 20);
                     }
                 }
                 if (fog[i][j])
                 {
-                    if (currentBlock != '!' && currentBlock != '+' && currentBlock != 'X' && !(currentBlock == 'O' && sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1] != -2))
+                    if (currentBlock != '!' && currentBlock != '+' && currentBlock != 'X' && !(currentBlock == 'O' && currentSM != -2))
                     {
                         currentBlock = 'F';
-                        sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = -1;
+                        currentSM = -1;
                     }
                 }
             }
