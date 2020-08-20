@@ -711,7 +711,7 @@ void putmap(int sx, int sy, int id)
                     if (currentBlock != '!')
                     {
                         if (mp[i][j].belong)
-                            sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = max(sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1], mp[i][j].belong % 11);
+                            sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = mp[i][j].belong % 11;
                         currentBlock = '+';
                     }
                 }
@@ -731,21 +731,21 @@ void putmap(int sx, int sy, int id)
                         if ((mapmode == CFlag || mapmode == CPoints) || (mapmode == Pubg && fvf))
                             sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = Inteam[mp[i][j].belong] % 11;
                         else
-                            sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = id % 11;
+                            sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = mp[i][j].belong % 11;
                     }
                 }
                 if (ifteam[Inteam[id]].find(mp[i][j].belong) != ifteam[Inteam[id]].end() || isreplay == 2 && mp[i][j].belong != 0)
                 {
                     if (currentBlock != '!' && currentBlock != '+' && currentBlock != 'X')
                     {
-                        if (mapmode != Pubg && mapmode != CFlag && mapmode != CPoints && mp[i][j].type == General && gennum <= 8)
+                        if ((mapmode != Pubg && mapmode != CFlag && mapmode != CPoints && mp[i][j].type == General && gennum <= 8) || isreplay == 2 && mp[i][j].type == General)
                             currentBlock = 'X';
                         else
                             currentBlock = 'O';
                         if ((mapmode == CFlag || mapmode == CPoints) || (mapmode == Pubg && fvf))
-                            sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = max(sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1], Inteam[mp[i][j].belong] % 11);
+                            sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = Inteam[mp[i][j].belong] % 11;
                         else
-                            sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = max(sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1], mp[i][j].belong % 11);
+                            sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = mp[i][j].belong % 11;
                     }
                 }
                 if (i == sx && j == sy && sx != 0 && sy != 0)
@@ -753,7 +753,7 @@ void putmap(int sx, int sy, int id)
                     if (currentBlock != '!' && currentBlock != '+' && currentBlock != 'X')
                     {
                         currentBlock = 'O';
-                        sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = max(sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1], 20);
+                        sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = 20;
                     }
                 }
                 if (fog[i][j])
@@ -761,7 +761,7 @@ void putmap(int sx, int sy, int id)
                     if (currentBlock != '!' && currentBlock != '+' && currentBlock != 'X' && !(currentBlock == 'O' && sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1] != -2))
                     {
                         currentBlock = 'F';
-                        sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = max(sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1], -1);
+                        sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1] = -1;
                     }
                 }
             }
@@ -2370,12 +2370,12 @@ int main()
     system("color 0f");
     system("chcp 65001");
     HANDLE hStdin = GetStdHandle(STD_INPUT_HANDLE); //https://blog.csdn.net/gxc1222/article/details/80999234
-    DWORD mode;
-    GetConsoleMode(hStdin, &mode);
-    mode &= ~ENABLE_QUICK_EDIT_MODE; //移除快速编辑模式
-    mode &= ~ENABLE_INSERT_MODE; //移除插入模式
-    mode &= ~ENABLE_MOUSE_INPUT;
-    SetConsoleMode(hStdin, mode);
+    DWORD mod;
+    GetConsoleMode(hStdin, &mod);
+    mod &= ~ENABLE_QUICK_EDIT_MODE; //移除快速编辑模式
+    mod &= ~ENABLE_INSERT_MODE; //移除插入模式
+    mod &= ~ENABLE_MOUSE_INPUT;
+    SetConsoleMode(hStdin, mod);
     itObjects();
     srand(time(NULL));
     convmap();
