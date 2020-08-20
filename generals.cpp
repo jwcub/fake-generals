@@ -664,8 +664,15 @@ void printCurrentMiniMap(int bgmp, int id)
 {
     for (int j = 1; j <= (Y - 1) / 5 + 1; j++)
     {
-        if (sm[bgmp][j] == 20)
+        if (sm[bgmp][j] == 200)
             SetColor(0xc, 0, 1);
+        else if (sm[bgmp][j] == 100)
+        {
+            if ((mapmode == CFlag || mapmode == CPoints) || (mapmode == Pubg && fvf))
+                SetColor(cls[Inteam[id] % 11], 0, 1);
+            else
+                SetColor(cls[id % 11], 0, 1);
+        }
         else if (sm[bgmp][j] == 19)
             SetColor(cls[id % 11], 0, 1);
         else if (sm[bgmp][j] == -2)
@@ -729,10 +736,11 @@ void putmap(int sx, int sy, int id)
                     if (currentBlock != '!' && currentBlock != '+')
                     {
                         currentBlock = 'X';
-                        if ((mapmode == CFlag || mapmode == CPoints) || (mapmode == Pubg && fvf))
-                            currentSM = Inteam[mp[i][j].belong] % 11;
-                        else
-                            currentSM = mp[i][j].belong % 11;
+                        // if ((mapmode == CFlag || mapmode == CPoints) || (mapmode == Pubg && fvf))
+                        //     currentSM = Inteam[mp[i][j].belong] % 11;
+                        // else
+                        //     currentSM = mp[i][j].belong % 11;
+                        currentSM = 100;
                     }
                 }
                 if (ifteam[Inteam[id]].find(mp[i][j].belong) != ifteam[Inteam[id]].end() || isreplay == 2 && mp[i][j].belong != 0)
@@ -743,6 +751,8 @@ void putmap(int sx, int sy, int id)
                             currentBlock = 'X';
                         else
                             currentBlock = 'O';
+                        if (mp[i][j].belong == id)
+                            currentSM = 100;
                         if ((mapmode == CFlag || mapmode == CPoints) || (mapmode == Pubg && fvf))
                             currentSM = max(currentSM, Inteam[mp[i][j].belong] % 11);
                         else
@@ -754,7 +764,7 @@ void putmap(int sx, int sy, int id)
                     if (currentBlock != '!' && currentBlock != '+' && currentBlock != 'X')
                     {
                         currentBlock = 'O';
-                        currentSM = max(currentSM, 20);
+                        currentSM = max(currentSM, 200);
                     }
                 }
                 if (fog[i][j])
