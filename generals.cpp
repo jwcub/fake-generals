@@ -660,9 +660,12 @@ bool cmpteam(const teamscore &s1, const teamscore &s2)
 int sm[105][105];
 char miniMap[105][105];
 bool isMiniMap;
+int miniMapLevel = 9;
+double xdivs = 5.0, ydivs = 5.0;
+int startingX, endingX, startingY, endingY;
 void printCurrentMiniMap(int bgmp, int id)
 {
-    for (int j = 1; j <= (Y - 1) / 5 + 1; j++)
+    for (int j = int(double(startingY - 1) / ydivs) + 1; j <= int(double(endingY - 1) / ydivs) + 1; j++)
     {
         if (sm[bgmp][j] == 200)
             SetColor(0xc, 0, 1);
@@ -691,19 +694,34 @@ void putmap(int sx, int sy, int id)
 {
     int bgmp = 0;
     bool clearing = false;
+    if (miniMapLevel == 9)
+    {
+        startingX = startingY = 1;
+        endingX = X;
+        endingY = Y;
+    }
+    else
+    {
+        startingX = max(1, sx - miniMapLevel * 5);
+        endingX = min(X, sx + miniMapLevel * 5);
+        startingY = max(1, sy - miniMapLevel * 5);
+        endingY = min(Y, sy + miniMapLevel * 5);
+    }
+    xdivs = double(endingX - startingX + 1) / 20.0;
+    ydivs = double(endingY - startingY + 1) / 20.0;
     if ((X > 15 || Y > 15) && isMiniMap)
     {
         isCleared = false;
         fill(sm[0], sm[0] + 105 * 105, -2);
-        for (int i = 1; i <= (X - 1) / 5 + 1; i++)
-            for (int j = 1; j <= (Y - 1) / 5 + 1; j++)
+        for (int i = int(double(startingX - 1) / xdivs) + 1; i <= int(double(endingX - 1) / xdivs) + 1; i++)
+            for (int j = int(double(startingY - 1) / ydivs) + 1; j <= int(double(endingY - 1) / ydivs) + 1; j++)
                 miniMap[i][j] = (opt ? ' ' : 'O');
-        for (int i = 1; i <= X; i++)
+        for (int i = startingX; i <= endingX; i++)
         {
-            for (int j = 1; j <= Y; j++)
+            for (int j = startingY; j <= endingY; j++)
             {
-                char &currentBlock = miniMap[(i - 1) / 5 + 1][(j - 1) / 5 + 1];
-                int &currentSM = sm[(i - 1) / 5 + 1][(j - 1) / 5 + 1];
+                char &currentBlock = miniMap[int(double(i - 1) / xdivs) + 1][int(double(j - 1) / ydivs) + 1];
+                int &currentSM = sm[int(double(i - 1) / xdivs) + 1][int(double(j - 1) / ydivs) + 1];
                 if (iskt[i][j] && iskt[i - 1][j - 1] && iskt[i + 1][j + 1])
                 {
                     currentBlock = '!';
@@ -783,8 +801,8 @@ void putmap(int sx, int sy, int id)
         isCleared = true;
         clearing = true;
         fill(sm[0], sm[0] + 105 * 105, -2);
-        for (int i = 1; i <= (X - 1) / 5 + 1; i++)
-            for (int j = 1; j <= (Y - 1) / 5 + 1; j++)
+        for (int i = int(double(startingX - 1) / xdivs) + 1; i <= int(double(endingX - 1) / xdivs) + 1; i++)
+            for (int j = int(double(startingY - 1) / ydivs) + 1; j <= int(double(endingY - 1) / ydivs) + 1; j++)
                 miniMap[i][j] = ' ';
     }
     gotoxy(0, 0);
@@ -820,9 +838,9 @@ void putmap(int sx, int sy, int id)
                 {
                     printf("   ");
                     bgmp++;
-                    if (bgmp <= (X - 1) / 5 + 1)
+                    if (bgmp <= (int(double(endingX - 1) / xdivs) + 1) - (int(double(startingX - 1) / xdivs) + 1) + 1)
                     {
-                        printCurrentMiniMap(bgmp, id);
+                        printCurrentMiniMap(bgmp + (int(double(startingX - 1) / xdivs) + 1) - 1, id);
                     }
                 }
                 printf("\n");
@@ -847,9 +865,9 @@ void putmap(int sx, int sy, int id)
                 {
                     printf("   ");
                     bgmp++;
-                    if (bgmp <= (X - 1) / 5 + 1)
+                    if (bgmp <= (int(double(endingX - 1) / xdivs) + 1) - (int(double(startingX - 1) / xdivs) + 1) + 1)
                     {
-                        printCurrentMiniMap(bgmp, id);
+                        printCurrentMiniMap(bgmp + (int(double(startingX - 1) / xdivs) + 1) - 1, id);
                     }
                 }
                 printf("\n");
@@ -1298,9 +1316,9 @@ void putmap(int sx, int sy, int id)
         {
             printf("   ");
             bgmp++;
-            if (bgmp <= (X - 1) / 5 + 1)
+            if (bgmp <= (int(double(endingX - 1) / xdivs) + 1) - (int(double(startingX - 1) / xdivs) + 1) + 1)
             {
-                printCurrentMiniMap(bgmp, id);
+                printCurrentMiniMap(bgmp + (int(double(startingX - 1) / xdivs) + 1) - 1, id);
             }
         }
         printf("\n");
@@ -1324,9 +1342,9 @@ void putmap(int sx, int sy, int id)
             {
                 printf("   ");
                 bgmp++;
-                if (bgmp <= (X - 1) / 5 + 1)
+                if (bgmp <= (int(double(endingX - 1) / xdivs) + 1) - (int(double(startingX - 1) / xdivs) + 1) + 1)
                 {
-                    printCurrentMiniMap(bgmp, id);
+                    printCurrentMiniMap(bgmp + (int(double(startingX - 1) / xdivs) + 1) - 1, id);
                 }
                 Setcolor();
             }
@@ -1352,9 +1370,9 @@ void putmap(int sx, int sy, int id)
             {
                 printf("   ");
                 bgmp++;
-                if (bgmp <= (X - 1) / 5 + 1)
+                if (bgmp <= (int(double(endingX - 1) / xdivs) + 1) - (int(double(startingX - 1) / xdivs) + 1) + 1)
                 {
-                    printCurrentMiniMap(bgmp, id);
+                    printCurrentMiniMap(bgmp + (int(double(startingX - 1) / xdivs) + 1) - 1, id);
                 }
                 Setcolor();
             }
@@ -2674,6 +2692,16 @@ int main()
                     if (flag)
                         break;
                 }
+            if ((X > 15 || Y > 15) && KEY_DOWN('Q'))
+            {
+                if (miniMapLevel > 3)
+                    miniMapLevel--;
+            }
+            if ((X > 15 || Y > 15) && KEY_DOWN('E'))
+            {
+                if (miniMapLevel < 9)
+                    miniMapLevel++;
+            }
             if (miniMapOpt == 1)
                 isMiniMap = true;
             else if (miniMapOpt == 2)
@@ -2733,6 +2761,16 @@ int main()
                 }
             }
             Sleep(tpt);
+            if ((X > 15 || Y > 15) && KEY_DOWN('Q'))
+            {
+                if (miniMapLevel > 3)
+                    miniMapLevel--;
+            }
+            if ((X > 15 || Y > 15) && KEY_DOWN('E'))
+            {
+                if (miniMapLevel < 9)
+                    miniMapLevel++;
+            }
             if (miniMapOpt == 1)
                 isMiniMap = true;
             else if (miniMapOpt == 2)
@@ -2977,6 +3015,16 @@ int main()
             }
         }
         Sleep(tpt);
+        if ((X > 15 || Y > 15) && KEY_DOWN('Q'))
+        {
+            if (miniMapLevel > 3)
+                miniMapLevel--;
+        }
+        if ((X > 15 || Y > 15) && KEY_DOWN('E'))
+        {
+            if (miniMapLevel < 9)
+                miniMapLevel++;
+        }
         if (miniMapOpt == 1)
             isMiniMap = true;
         else if (miniMapOpt == 2)
