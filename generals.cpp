@@ -61,7 +61,8 @@ enum land_type
     Fh,
     Exfh,
     Points,
-    Send
+    Send,
+    Grrenade
 };
 enum game_mode
 {
@@ -175,6 +176,7 @@ int dist(int xx1, int yy1, int xx2, int yy2)
 {
     return abs(xx1 - xx2) + abs(yy1 - yy2);
 }
+int alivegennum = gennum, aliveteamnum = teamnum;
 void congen()
 {
     for (int i = 1; i <= gennum; i++)
@@ -647,8 +649,59 @@ void getnum(int x)
         printf("9K");
     return;
 }
-int playeratk[105], playerac[105], playerfh[105];
+int playeratk[105], playerac[105], playerfh[105], playerGrenade[105];
+int isGrenade[105][105];
 int teampointsmatchscore[105], teampointsmatchland[105];
+struct Grenade
+{
+    int sx, sy, ex, ey, dmg, frm, cx, cy, tmp;
+    void tozero()
+    {
+        sx = sy = ex = ey = dmg = frm = cx = cy = 0;
+        return;
+    }
+};
+vector<Grenade> currentGrenade;
+void addGrenade(int sx, int sy, int ex, int ey, int dmg, int frm)
+{
+    currentGrenade.push_back((Grenade){sx, sy, ex, ey, dmg, frm, sx, sy, 0});
+    return;
+}
+void updateGrenade()
+{
+    if (currentGrenade.empty())
+        return;
+    for (int i = 1; i <= X; i++)
+        for (int j = 1; j <= Y; j++)
+            isGrenade[i][j] = 0;
+    for (vector<Grenade>::iterator it = currentGrenade.begin(); it != currentGrenade.end();)
+    {
+        Grenade &cur = *it;
+        if (dist(cur.cx, cur.cy, cur.ex, cur.ey) <= 1 || cur.cx < 1 || cur.cx > X || cur.cy < 1 || cur.cy > Y || cur.tmp >= 6)
+        {
+            for (int i = cur.ex - 3; i <= cur.ex + 3; i++)
+                for (int j = cur.ey - 3; j <= cur.ey + 3; j++)
+                    if (i >= 1 && i <= X && j >= 1 && j <= Y && mp[i][j].type == General && mp[i][j].tmp > 0 && (mode == Ffa || mode == Tdm && ifteam[Inteam[mp[i][j].belong]].find(cur.frm) == ifteam[Inteam[mp[i][j].belong]].end() || mp[i][j].belong == cur.frm))
+                    {
+                        mp[i][j].tmp -= cur.dmg;
+
+                        if (mapmode == Pubg && mp[i][j].tmp <= 0)
+                        {
+                            mp[i][j].tozero();
+                            alivegennum--;
+                        }
+                    }
+            it = currentGrenade.erase(it);
+            continue;
+        }
+        cur.cx += int(ceil(double(cur.ex - cur.sx) / 5.0));
+        cur.cy += int(ceil(double(cur.ey - cur.sy) / 5.0));
+        cur.tmp++;
+        isGrenade[cur.cx][cur.cy] = cur.frm;
+        it++;
+    }
+    return;
+}
 struct teamscore
 {
     int score, pos;
@@ -895,411 +948,440 @@ void putmap(int sx, int sy, int id)
             }
             if (fog[i][j])
                 SetColor(0xd, 0xd, 2);
-            if (sx == i && sy == j && !(mapmode == Pubg || mapmode == CFlag || mapmode == CPoints))
+            if (isGrenade[i][j])
             {
-                SetColor(0xc, 0, 1);
-                if (mp[i][j].type == Empty_land)
+                if ((mapmode == 7 || mapmode == 6) && mode == Tdm || mapmode == Pubg && fvf)
+                    SetColor(cls[Inteam[isGrenade[i][j]] % 11], 0, 100);
+                else
                 {
-                    if (iskt[i][j])
-                        printf("▒▒▒▒");
-                    else if (fog[i][j])
-                        printf("████");
-                    else
-                        printf("    ");
+                    SetColor(cls[isGrenade[i][j] % 11], 0, 100);
                 }
-                else if (mp[i][j].type == Wall)
-                    printf("####");
-                else if (mp[i][j].type == General)
-                {
-                    if (ifgetflag[mp[i][j].belong])
-                    {
-                        printf("<");
-                        getnum(mp[i][j].tmp);
-                        printf(">");
-                    }
-                    else
-                    {
-                        if ((mapmode == 7 || mapmode == 6) && mode == Tdm || mapmode == Pubg && fvf)
-                            SetColor(cls[Inteam[mp[i][j].belong] % 11], 0, 100);
-                        printf("{");
-                        getnum(mp[i][j].tmp);
-                        printf("}");
-                    }
-                }
-                else if (mp[i][j].type == Land)
-                {
-                    printf(" ");
-                    getnum(mp[i][j].tmp);
-                    printf(" ");
-                }
-                else if (mp[i][j].type == Empty_city)
-                {
-                    printf("[");
-                    getnum(mp[i][j].tmp);
-                    printf("]");
-                }
-                else if (mp[i][j].type == 5)
-                {
-                    printf("[");
-                    getnum(mp[i][j].tmp);
-                    printf("]");
-                }
-                else if (mp[i][j].type == 6)
-                    printf(" +  ");
-                else if (mp[i][j].type == 8)
-                {
-                    printf("<--l");
-                }
-                else if (mp[i][j].type == 7)
-                {
-                    printf("[O] ");
-                }
-                else if (mp[i][j].type == 9)
-                    printf("( %d)", mp[i][j].belong);
-                else if (mp[i][j].type == 10)
-                    printf("(   )");
-                else if (mp[i][j].type == 11)
-                    printf("{+} ");
-                else if (mp[i][j].type == 12)
-                    printf("{O} ");
-                else if (mp[i][j].type == 13)
-                    printf("<==I");
-                else if (mp[i][j].type == 14)
-                    printf("[L] ");
-                else if (mp[i][j].type == 15)
-                    printf("[C] ");
-                else if (mp[i][j].type == 16)
-                    printf("{C} ");
-                else if (mp[i][j].type == 17)
-                    printf("{2X}");
-                else if (mp[i][j].type == 18)
-                    printf("[F]");
-                else if (mp[i][j].type == 19)
-                    printf("{F}");
+                printf("<G> ");
                 Setcolor();
             }
             else
             {
-                if (mp[i][j].type == Empty_land)
+                if (sx == i && sy == j && !(mapmode == Pubg || mapmode == CFlag || mapmode == CPoints))
                 {
-                    if (iskt[i][j])
-                        printf("▒▒▒▒");
-                    else if (fog[i][j])
-                        printf("████");
-                    else if (sight[id][i][j] || opt)
+                    SetColor(0xc, 0, 1);
+                    if (mp[i][j].type == Empty_land)
                     {
-                        if (isHaveSend[id] && sight[id][i][j])
-                        {
-                            SetColor(6, 0, 20000);
+                        if (iskt[i][j])
+                            printf("▒▒▒▒");
+                        else if (fog[i][j])
                             printf("████");
-                            Setcolor();
-                        }
                         else
                             printf("    ");
                     }
-                    else
-                    {
-                        SetColor(15, 0, 1);
-                        printf("████");
-                        Setcolor();
-                    }
-                }
-                else if (mp[i][j].type == Wall)
-                {
-                    if (sight[id][i][j])
+                    else if (mp[i][j].type == Wall)
                         printf("####");
-                    else
-                        printf("????");
-                }
-                else if (mp[i][j].type == General)
-                {
-                    if (ifgetflag[mp[i][j].belong])
+                    else if (mp[i][j].type == General)
                     {
-                        SetColor(cls[Inteam[mp[i][j].belong] % 11], 0, 100);
-                        printf("<");
-                        getnum(mp[i][j].tmp);
-                        printf(">");
-                        Setcolor();
-                    }
-                    else if (sight[id][i][j])
-                    {
-                        SetColor(cls[mp[i][j].belong % 11], 0, 1);
-                        if ((mapmode == CFlag || mapmode == CPoints) && mode == Tdm || mapmode == Pubg && fvf)
-                            SetColor(cls[Inteam[mp[i][j].belong] % 11], 0, 100);
-                        printf("{");
-                        getnum(mp[i][j].tmp);
-                        printf("}");
-                        Setcolor();
-                    }
-                    else
-                    {
-                        if (fog[i][j])
-                            printf("████");
-                        else if (sight[id][i][j] || opt)
-                            printf("    ");
+                        if (ifgetflag[mp[i][j].belong])
+                        {
+                            printf("<");
+                            getnum(mp[i][j].tmp);
+                            printf(">");
+                        }
                         else
                         {
-                            SetColor(15, 0, 1);
-                            printf("████");
-                            Setcolor();
+                            if ((mapmode == 7 || mapmode == 6) && mode == Tdm || mapmode == Pubg && fvf)
+                                SetColor(cls[Inteam[mp[i][j].belong] % 11], 0, 100);
+                            printf("{");
+                            getnum(mp[i][j].tmp);
+                            printf("}");
                         }
                     }
-                }
-                else if (mp[i][j].type == Land)
-                {
-                    if (sight[id][i][j])
+                    else if (mp[i][j].type == Land)
                     {
-                        SetColor(cls[mp[i][j].belong % 11], 0, 1);
                         printf(" ");
                         getnum(mp[i][j].tmp);
                         printf(" ");
-                        Setcolor();
                     }
-                    else
-                    {
-                        if (fog[i][j])
-                            printf("████");
-                        else if (sight[id][i][j] || opt)
-                            printf("    ");
-                        else
-                        {
-                            SetColor(15, 0, 1);
-                            printf("████");
-                            Setcolor();
-                        }
-                    }
-                }
-                else if (mp[i][j].type == Empty_city)
-                {
-                    if (sight[id][i][j])
+                    else if (mp[i][j].type == Empty_city)
                     {
                         printf("[");
                         getnum(mp[i][j].tmp);
                         printf("]");
                     }
-                    else
-                        printf("????");
-                }
-                else if (mp[i][j].type == 5)
-                {
-                    if (sight[id][i][j])
+                    else if (mp[i][j].type == 5)
                     {
-                        SetColor(cls[mp[i][j].belong % 11], 0, 1);
                         printf("[");
                         getnum(mp[i][j].tmp);
                         printf("]");
-                        Setcolor();
                     }
-                    else
-                        printf("????");
-                }
-                else if (mp[i][j].type == 6)
-                {
-                    if (sight[id][i][j])
+                    else if (mp[i][j].type == 6)
                         printf(" +  ");
-                    else if (fog[i][j])
-                        printf("████");
-                    else if (sight[id][i][j] || opt)
-                        printf("    ");
-                    else
+                    else if (mp[i][j].type == 8)
                     {
-                        SetColor(15, 0, 1);
-                        printf("████");
-                        Setcolor();
-                    }
-                }
-                else if (mp[i][j].type == 8)
-                {
-                    if (sight[id][i][j])
                         printf("<--l");
-                    else if (fog[i][j])
-                        printf("████");
-                    else if (sight[id][i][j] || opt)
-                        printf("    ");
-                    else
-                    {
-                        SetColor(15, 0, 1);
-                        printf("████");
-                        Setcolor();
                     }
-                }
-                else if (mp[i][j].type == 7)
-                {
-                    if (sight[id][i][j])
+                    else if (mp[i][j].type == 7)
+                    {
                         printf("[O] ");
-                    else if (fog[i][j])
-                        printf("████");
-                    else if (sight[id][i][j] || opt)
-                        printf("    ");
-                    else
-                    {
-                        SetColor(15, 0, 1);
-                        printf("████");
-                        Setcolor();
                     }
-                }
-                else if (mp[i][j].type == 9)
-                    printf("( %d)", mp[i][j].belong);
-                else if (mp[i][j].type == 10)
-                    printf("(  )");
-                else if (mp[i][j].type == 11)
-                {
-                    if (sight[id][i][j])
+                    else if (mp[i][j].type == 9)
+                        printf("( %d)", mp[i][j].belong);
+                    else if (mp[i][j].type == 10)
+                        printf("(   )");
+                    else if (mp[i][j].type == 11)
                         printf("{+} ");
-                    else if (fog[i][j])
-                        printf("████");
-                    else if (sight[id][i][j] || opt)
-                        printf("    ");
-                    else
-                    {
-                        SetColor(15, 0, 1);
-                        printf("████");
-                        Setcolor();
-                    }
-                }
-                else if (mp[i][j].type == 12)
-                {
-                    if (sight[id][i][j])
+                    else if (mp[i][j].type == 12)
                         printf("{O} ");
-                    else if (fog[i][j])
-                        printf("████");
-                    else if (sight[id][i][j] || opt)
-                        printf("    ");
-                    else
-                    {
-                        SetColor(15, 0, 1);
-                        printf("████");
-                        Setcolor();
-                    }
-                }
-                else if (mp[i][j].type == 13)
-                {
-                    if (sight[id][i][j])
+                    else if (mp[i][j].type == 13)
                         printf("<==I");
-                    else if (fog[i][j])
-                        printf("████");
-                    else if (sight[id][i][j] || opt)
-                        printf("    ");
-                    else
-                    {
-                        SetColor(15, 0, 1);
-                        printf("████");
-                        Setcolor();
-                    }
-                }
-                else if (mp[i][j].type == 14)
-                {
-                    if (sight[id][i][j])
+                    else if (mp[i][j].type == 14)
                         printf("[L] ");
-                    else if (fog[i][j])
-                        printf("████");
-                    else if (sight[id][i][j] || opt)
-                        printf("    ");
-                    else
-                    {
-                        SetColor(15, 0, 1);
-                        printf("████");
-                        Setcolor();
-                    }
-                }
-                else if (mp[i][j].type == 15)
-                {
-                    if (sight[id][i][j])
+                    else if (mp[i][j].type == 15)
                         printf("[C] ");
-                    else if (fog[i][j])
-                        printf("████");
-                    else if (sight[id][i][j] || opt)
-                        printf("    ");
-                    else
-                    {
-                        SetColor(15, 0, 1);
-                        printf("████");
-                        Setcolor();
-                    }
-                }
-                else if (mp[i][j].type == 16)
-                {
-                    if (sight[id][i][j])
+                    else if (mp[i][j].type == 16)
                         printf("{C} ");
-                    else if (fog[i][j])
-                        printf("████");
-                    else if (sight[id][i][j] || opt)
-                        printf("    ");
-                    else
-                    {
-                        SetColor(15, 0, 1);
-                        printf("████");
-                        Setcolor();
-                    }
-                }
-                else if (mp[i][j].type == 17)
-                {
-                    if (sight[id][i][j])
+                    else if (mp[i][j].type == 17)
                         printf("{2X}");
-                    else if (fog[i][j])
-                        printf("████");
-                    else if (sight[id][i][j] || opt)
-                        printf("    ");
-                    else
+                    else if (mp[i][j].type == 18)
+                        printf("[F]");
+                    else if (mp[i][j].type == 19)
+                        printf("{F}");
+                    Setcolor();
+                }
+                else
+                {
+                    if (mp[i][j].type == Empty_land)
                     {
-                        SetColor(15, 0, 1);
-                        printf("████");
-                        Setcolor();
+                        if (iskt[i][j])
+                            printf("▒▒▒▒");
+                        else if (fog[i][j])
+                            printf("████");
+                        else if (sight[id][i][j] || opt)
+                        {
+                            if (isHaveSend[id] && sight[id][i][j])
+                            {
+                                SetColor(6, 0, 20000);
+                                printf("████");
+                                Setcolor();
+                            }
+                            else
+                                printf("    ");
+                        }
+                        else
+                        {
+                            SetColor(15, 0, 1);
+                            printf("████");
+                            Setcolor();
+                        }
                     }
-                }
-                else if (mp[i][j].type == 18)
-                {
-                    if (sight[id][i][j])
-                        printf("[F] ");
-                    else if (fog[i][j])
-                        printf("████");
-                    else if (sight[id][i][j] || opt)
-                        printf("    ");
-                    else
+                    else if (mp[i][j].type == Wall)
                     {
-                        SetColor(15, 0, 1);
-                        printf("████");
-                        Setcolor();
+                        if (sight[id][i][j])
+                            printf("####");
+                        else
+                            printf("????");
                     }
-                }
-                else if (mp[i][j].type == 19)
-                {
-                    if (sight[id][i][j])
-                        printf("{F} ");
-                    else if (fog[i][j])
-                        printf("████");
-                    else if (sight[id][i][j] || opt)
-                        printf("    ");
-                    else
+                    else if (mp[i][j].type == General)
                     {
-                        SetColor(15, 0, 1);
-                        printf("████");
-                        Setcolor();
+                        if (ifgetflag[mp[i][j].belong])
+                        {
+                            SetColor(cls[Inteam[mp[i][j].belong] % 11], 0, 100);
+                            printf("<");
+                            getnum(mp[i][j].tmp);
+                            printf(">");
+                            Setcolor();
+                        }
+                        else if (sight[id][i][j])
+                        {
+                            SetColor(cls[mp[i][j].belong % 11], 0, 1);
+                            if ((mapmode == CFlag || mapmode == CPoints) && mode == Tdm || mapmode == Pubg && fvf)
+                                SetColor(cls[Inteam[mp[i][j].belong] % 11], 0, 100);
+                            printf("{");
+                            getnum(mp[i][j].tmp);
+                            printf("}");
+                            Setcolor();
+                        }
+                        else
+                        {
+                            if (fog[i][j])
+                                printf("████");
+                            else if (sight[id][i][j] || opt)
+                                printf("    ");
+                            else
+                            {
+                                SetColor(15, 0, 1);
+                                printf("████");
+                                Setcolor();
+                            }
+                        }
                     }
-                }
-                else if (mp[i][j].type == 20)
-                {
-                    if (mp[i][j].belong)
-                        SetColor(cls[mp[i][j].belong % 11], 0, 100);
-                    printf("[");
-                    getnum(mp[i][j].tmp);
-                    printf("]");
-                    if (mp[i][j].belong)
-                        Setcolor();
-                }
-                else if (mp[i][j].type == Send)
-                {
-                    if (sight[id][i][j])
-                        printf("<S> ");
-                    else if (fog[i][j])
-                        printf("████");
-                    else if (sight[id][i][j] || opt)
-                        printf("    ");
-                    else
+                    else if (mp[i][j].type == Land)
                     {
-                        SetColor(15, 0, 1);
-                        printf("████");
-                        Setcolor();
+                        if (sight[id][i][j])
+                        {
+                            SetColor(cls[mp[i][j].belong % 11], 0, 1);
+                            printf(" ");
+                            getnum(mp[i][j].tmp);
+                            printf(" ");
+                            Setcolor();
+                        }
+                        else
+                        {
+                            if (fog[i][j])
+                                printf("████");
+                            else if (sight[id][i][j] || opt)
+                                printf("    ");
+                            else
+                            {
+                                SetColor(15, 0, 1);
+                                printf("████");
+                                Setcolor();
+                            }
+                        }
+                    }
+                    else if (mp[i][j].type == Empty_city)
+                    {
+                        if (sight[id][i][j])
+                        {
+                            printf("[");
+                            getnum(mp[i][j].tmp);
+                            printf("]");
+                        }
+                        else
+                            printf("????");
+                    }
+                    else if (mp[i][j].type == 5)
+                    {
+                        if (sight[id][i][j])
+                        {
+                            SetColor(cls[mp[i][j].belong % 11], 0, 1);
+                            printf("[");
+                            getnum(mp[i][j].tmp);
+                            printf("]");
+                            Setcolor();
+                        }
+                        else
+                            printf("????");
+                    }
+                    else if (mp[i][j].type == 6)
+                    {
+                        if (sight[id][i][j])
+                            printf(" +  ");
+                        else if (fog[i][j])
+                            printf("████");
+                        else if (sight[id][i][j] || opt)
+                            printf("    ");
+                        else
+                        {
+                            SetColor(15, 0, 1);
+                            printf("████");
+                            Setcolor();
+                        }
+                    }
+                    else if (mp[i][j].type == 8)
+                    {
+                        if (sight[id][i][j])
+                            printf("<--l");
+                        else if (fog[i][j])
+                            printf("████");
+                        else if (sight[id][i][j] || opt)
+                            printf("    ");
+                        else
+                        {
+                            SetColor(15, 0, 1);
+                            printf("████");
+                            Setcolor();
+                        }
+                    }
+                    else if (mp[i][j].type == 7)
+                    {
+                        if (sight[id][i][j])
+                            printf("[O] ");
+                        else if (fog[i][j])
+                            printf("████");
+                        else if (sight[id][i][j] || opt)
+                            printf("    ");
+                        else
+                        {
+                            SetColor(15, 0, 1);
+                            printf("████");
+                            Setcolor();
+                        }
+                    }
+                    else if (mp[i][j].type == 9)
+                        printf("( %d)", mp[i][j].belong);
+                    else if (mp[i][j].type == 10)
+                        printf("(  )");
+                    else if (mp[i][j].type == 11)
+                    {
+                        if (sight[id][i][j])
+                            printf("{+} ");
+                        else if (fog[i][j])
+                            printf("████");
+                        else if (sight[id][i][j] || opt)
+                            printf("    ");
+                        else
+                        {
+                            SetColor(15, 0, 1);
+                            printf("████");
+                            Setcolor();
+                        }
+                    }
+                    else if (mp[i][j].type == 12)
+                    {
+                        if (sight[id][i][j])
+                            printf("{O} ");
+                        else if (fog[i][j])
+                            printf("████");
+                        else if (sight[id][i][j] || opt)
+                            printf("    ");
+                        else
+                        {
+                            SetColor(15, 0, 1);
+                            printf("████");
+                            Setcolor();
+                        }
+                    }
+                    else if (mp[i][j].type == 13)
+                    {
+                        if (sight[id][i][j])
+                            printf("<==I");
+                        else if (fog[i][j])
+                            printf("████");
+                        else if (sight[id][i][j] || opt)
+                            printf("    ");
+                        else
+                        {
+                            SetColor(15, 0, 1);
+                            printf("████");
+                            Setcolor();
+                        }
+                    }
+                    else if (mp[i][j].type == 14)
+                    {
+                        if (sight[id][i][j])
+                            printf("[L] ");
+                        else if (fog[i][j])
+                            printf("████");
+                        else if (sight[id][i][j] || opt)
+                            printf("    ");
+                        else
+                        {
+                            SetColor(15, 0, 1);
+                            printf("████");
+                            Setcolor();
+                        }
+                    }
+                    else if (mp[i][j].type == 15)
+                    {
+                        if (sight[id][i][j])
+                            printf("[C] ");
+                        else if (fog[i][j])
+                            printf("████");
+                        else if (sight[id][i][j] || opt)
+                            printf("    ");
+                        else
+                        {
+                            SetColor(15, 0, 1);
+                            printf("████");
+                            Setcolor();
+                        }
+                    }
+                    else if (mp[i][j].type == 16)
+                    {
+                        if (sight[id][i][j])
+                            printf("{C} ");
+                        else if (fog[i][j])
+                            printf("████");
+                        else if (sight[id][i][j] || opt)
+                            printf("    ");
+                        else
+                        {
+                            SetColor(15, 0, 1);
+                            printf("████");
+                            Setcolor();
+                        }
+                    }
+                    else if (mp[i][j].type == 17)
+                    {
+                        if (sight[id][i][j])
+                            printf("{2X}");
+                        else if (fog[i][j])
+                            printf("████");
+                        else if (sight[id][i][j] || opt)
+                            printf("    ");
+                        else
+                        {
+                            SetColor(15, 0, 1);
+                            printf("████");
+                            Setcolor();
+                        }
+                    }
+                    else if (mp[i][j].type == 18)
+                    {
+                        if (sight[id][i][j])
+                            printf("[F] ");
+                        else if (fog[i][j])
+                            printf("████");
+                        else if (sight[id][i][j] || opt)
+                            printf("    ");
+                        else
+                        {
+                            SetColor(15, 0, 1);
+                            printf("████");
+                            Setcolor();
+                        }
+                    }
+                    else if (mp[i][j].type == 19)
+                    {
+                        if (sight[id][i][j])
+                            printf("{F} ");
+                        else if (fog[i][j])
+                            printf("████");
+                        else if (sight[id][i][j] || opt)
+                            printf("    ");
+                        else
+                        {
+                            SetColor(15, 0, 1);
+                            printf("████");
+                            Setcolor();
+                        }
+                    }
+                    else if (mp[i][j].type == 20)
+                    {
+                        if (mp[i][j].belong)
+                            SetColor(cls[mp[i][j].belong % 11], 0, 100);
+                        printf("[");
+                        getnum(mp[i][j].tmp);
+                        printf("]");
+                        if (mp[i][j].belong)
+                            Setcolor();
+                    }
+                    else if (mp[i][j].type == Send)
+                    {
+                        if (sight[id][i][j])
+                            printf("<S> ");
+                        else if (fog[i][j])
+                            printf("████");
+                        else if (sight[id][i][j] || opt)
+                            printf("    ");
+                        else
+                        {
+                            SetColor(15, 0, 1);
+                            printf("████");
+                            Setcolor();
+                        }
+                    }
+                    else if (mp[i][j].type == Grrenade)
+                    {
+                        if (sight[id][i][j])
+                            printf("<G> ");
+                        else if (fog[i][j])
+                            printf("████");
+                        else if (sight[id][i][j] || opt)
+                            printf("    ");
+                        else
+                        {
+                            SetColor(15, 0, 1);
+                            printf("████");
+                            Setcolor();
+                        }
                     }
                 }
             }
@@ -1480,7 +1562,7 @@ void putmap(int sx, int sy, int id)
     {
         if (mapmode == 5)
             printf("毒圈还有 %d 回合扩散\n", rm);
-        printf("当前玩家拥有的物品：剑%d， 护盾%d， 防毒面具%d\n", playeratk[id], playerac[id], playerfh[id]);
+        printf("当前玩家拥有的物品：剑%d， 护盾%d， 防毒面具%d， 手雷%d\n", playeratk[id], playerac[id], playerfh[id], playerGrenade[id]);
         if (ktremaintime > 0)
             printf("空投还有 %d 回合落地\n", ktremaintime);
         if (mapmode == 6 || mapmode == 7)
@@ -1498,7 +1580,6 @@ void putmap(int sx, int sy, int id)
         printf("当前玩家持有闪现技能\n");
     return;
 }
-int alivegennum = gennum, aliveteamnum = teamnum;
 struct Flg
 {
     int sx, sy, belong;
@@ -1683,6 +1764,8 @@ struct Player
                         playerfh[dp->belong] += 3, dt->type = Empty_land, aliveobjectnum--;
                     if (dt->type == Send)
                         isHaveSend[dp->belong] = true, dt->type = Empty_land, aliveobjectnum--;
+                    if (dt->type == Grrenade)
+                        playerGrenade[dp->belong]++, dt->type = Empty_land, aliveobjectnum--;
                     if (dt->type == 9)
                     {
                         if (dt->belong != Inteam[playerid] && !ifgetflag[playerid])
@@ -1797,6 +1880,8 @@ struct Player
                         playerfh[dp->belong] += 3, dt->type = Empty_land, aliveobjectnum--;
                     if (dt->type == Send)
                         isHaveSend[dp->belong] = true, dt->type = Empty_land, aliveobjectnum--;
+                    if (dt->type == Grrenade)
+                        playerGrenade[dp->belong]++, dt->type = Empty_land, aliveobjectnum--;
                     if (dt->type == 9)
                     {
                         if (dt->belong != Inteam[playerid] && !ifgetflag[playerid])
@@ -1911,6 +1996,8 @@ struct Player
                         playerfh[dp->belong] += 3, dt->type = Empty_land, aliveobjectnum--;
                     if (dt->type == Send)
                         isHaveSend[dp->belong] = true, dt->type = Empty_land, aliveobjectnum--;
+                    if (dt->type == Grrenade)
+                        playerGrenade[dp->belong]++, dt->type = Empty_land, aliveobjectnum--;
                     if (dt->type == 9)
                     {
                         if (dt->belong != Inteam[playerid] && !ifgetflag[playerid])
@@ -2025,6 +2112,8 @@ struct Player
                         playerfh[dp->belong] += 3, dt->type = Empty_land, aliveobjectnum--;
                     if (dt->type == Send)
                         isHaveSend[dp->belong] = true, dt->type = Empty_land, aliveobjectnum--;
+                    if (dt->type == Grrenade)
+                        playerGrenade[dp->belong]++, dt->type = Empty_land, aliveobjectnum--;
                     if (dt->type == 9)
                     {
                         if (dt->belong != Inteam[playerid] && !ifgetflag[playerid])
@@ -2096,6 +2185,24 @@ struct Player
         }
         int x = q.front().first, y = q.front().second;
         q.pop();
+        if (playerGrenade[playerid] > 0)
+        {
+            for (int i = x - 7; i <= x + 7; i++)
+                for (int j = y - 7; j <= y + 7; j++)
+                    if (i >= 1 && i <= X && j >= 1 && j <= Y && sight[playerid][i][j] && mp[i][j].type == General && (mode == Ffa || mode == Tdm && Inteam[mp[i][j].belong] != Inteam[playerid]) && mp[i][j].belong != playerid)
+                    {
+                        if (playerGrenade[playerid] > 0)
+                        {
+                            playerGrenade[playerid]--;
+                            addGrenade(x, y, i, j, 20, playerid);
+                        }
+                        else
+                        {
+                            i = x + 10;
+                            break;
+                        }
+                    }
+        }
         for (int i = rand() % 4; rand() % 10 != 0; i = rand() % 4)
         {
             int px = x + dir[i][0], py = y + dir[i][1];
@@ -2357,6 +2464,12 @@ void savemap()
             outfile << ifgetflag[i] << " ";
         outfile << endl;
     }
+    if (mapmode == Pubg || mapmode == CFlag || mapmode == CPoints)
+    {
+        outfile << currentGrenade.size() << endl;
+        for (vector<Grenade>::iterator it = currentGrenade.begin(); it != currentGrenade.end(); it++)
+            outfile << it->frm << " " << it->cx << " " << it->cy << endl;
+    }
     outfile.close();
     return;
 }
@@ -2378,6 +2491,7 @@ void itObjects()
     addObject(Pill, normalobjects);
     addObject(Fh, normalobjects);
     addObject(Send, normalobjects);
+    addObject(Grrenade, normalobjects);
     addObject(Health, objects);
     addObject(Ac, objects);
     addObject(Sword, objects);
@@ -2390,6 +2504,7 @@ void itObjects()
     addObject(Exfh, objects);
     addObject(Twoscope, objects);
     addObject(Expill, objects);
+    addObject(Grrenade, objects);
     return;
 }
 int miniMapOpt;
@@ -2402,7 +2517,7 @@ int main()
     DWORD mod;
     GetConsoleMode(hStdin, &mod);
     mod &= ~ENABLE_QUICK_EDIT_MODE; //移除快速编辑模式
-    mod &= ~ENABLE_INSERT_MODE; //移除插入模式
+    mod &= ~ENABLE_INSERT_MODE;     //移除插入模式
     mod &= ~ENABLE_MOUSE_INPUT;
     SetConsoleMode(hStdin, mod);
     itObjects();
@@ -2662,6 +2777,20 @@ int main()
             if (mapmode == CFlag)
                 for (int i = 1; i <= gennum; i++)
                     infile >> ifgetflag[i];
+            if (mapmode == Pubg || mapmode == CPoints || mapmode == CFlag)
+            {
+                for (int i = 1; i <= X; i++)
+                    for (int j = 1; j <= Y; j++)
+                        isGrenade[i][j] = 0;
+                int cnt;
+                infile >> cnt;
+                while (cnt--)
+                {
+                    int p1, p2, p3;
+                    infile >> p1 >> p2 >> p3;
+                    isGrenade[p2][p3] = p1;
+                }
+            }
             putmap(player[currentplayer].selectedx, player[currentplayer].selectedy, currentplayer);
             for (int k = 1; k <= gennum; k++)
             {
@@ -2759,6 +2888,18 @@ int main()
                                 break;
                             }
                 }
+                else if (playerGrenade[currentplayer] > 0 && mp[sp][sq].type != Wall)
+                {
+                    for (int i = 1; i <= X; i++)
+                        for (int j = 1; j <= Y; j++)
+                            if (mp[i][j].type == General && mp[i][j].belong == currentplayer)
+                            {
+                                addGrenade(i, j, sp, sq, playerGrenade[currentplayer] * 20, currentplayer);
+                                i = X + 1;
+                                playerGrenade[currentplayer] = 0;
+                                break;
+                            }
+                }
             }
             Sleep(tpt);
             if ((X > 15 || Y > 15) && KEY_DOWN('Q'))
@@ -2839,6 +2980,11 @@ int main()
                                         sight[mp[i][j].belong][px][py] = true;
                                 }
                     }
+                    else if (isGrenade[i][j])
+                        for (int k = i - 2; k <= i + 2; k++)
+                            for (int w = j - 2; w <= j + 2; w++)
+                                if (k >= 1 && k <= X && w >= 1 && w <= Y)
+                                    sight[isGrenade[i][j]][k][w] = true;
             if (mp[player[currentplayer].selectedx][player[currentplayer].selectedy].belong != currentplayer)
                 for (int i = 1; i <= X; i++)
                     for (int j = 1; j <= Y; j++)
@@ -2896,6 +3042,8 @@ int main()
                 if (isOne)
                     break;
             }
+            if (mapmode == Pubg || mapmode == CFlag || mapmode == CPoints)
+                updateGrenade();
             savemap();
             turn++;
             if (isPaint)
@@ -3013,6 +3161,18 @@ int main()
                             break;
                         }
             }
+            else if (playerGrenade[currentplayer] > 0 && mp[sp][sq].type != Wall)
+            {
+                for (int i = 1; i <= X; i++)
+                    for (int j = 1; j <= Y; j++)
+                        if (mp[i][j].type == General && mp[i][j].belong == currentplayer)
+                        {
+                            addGrenade(i, j, sp, sq, playerGrenade[currentplayer] * 20, currentplayer);
+                            i = X + 1;
+                            playerGrenade[currentplayer] = 0;
+                            break;
+                        }
+            }
         }
         Sleep(tpt);
         if ((X > 15 || Y > 15) && KEY_DOWN('Q'))
@@ -3079,8 +3239,8 @@ int main()
                     if (mp[i][j].type == Points || mp[i][j].type == Flag || mp[i][j].type == Empty_flag)
                         continue;
                     if ((mapmode == 5 || mapmode == 6 || mapmode == 7) && player[mp[i][j].belong].inteam == player[currentplayer].inteam)
-                        for (int k = i - 2 - ishavets[currentplayer]; k <= i + 2 + ishavets[currentplayer]; k++)
-                            for (int w = j - 2 - ishavets[currentplayer]; w <= j + 2 + ishavets[currentplayer]; w++)
+                        for (int k = i - 2 - ishavets[mp[i][j].belong]; k <= i + 2 + ishavets[mp[i][j].belong]; k++)
+                            for (int w = j - 2 - ishavets[mp[i][j].belong]; w <= j + 2 + ishavets[mp[i][j].belong]; w++)
                                 if (k >= 1 && k <= X && w >= 1 && w <= Y)
                                     for (int p = 1; p <= team[player[mp[i][j].belong].inteam].membernum; p++)
                                         sight[team[player[mp[i][j].belong].inteam].members[p]->playerid][k][w] = true;
@@ -3094,6 +3254,14 @@ int main()
                                     sight[team[player[mp[i][j].belong].inteam].members[k]->playerid][px][py] = true;
                         }
                 }
+                else if (isGrenade[i][j] && Inteam[isGrenade[i][j]] == Inteam[currentplayer])
+                    for (int k = i - 2; k <= i + 2; k++)
+                        for (int w = j - 2; w <= j + 2; w++)
+                            if (k >= 1 && k <= X && w >= 1 && w <= Y)
+                                for (int p = 1; p <= team[Inteam[isGrenade[i][j]]].membernum; p++)
+                                    sight[team[Inteam[isGrenade[i][j]]].members[p]->playerid][k][w] = true;
+                            else
+                                ;
         if (mp[player[currentplayer].selectedx][player[currentplayer].selectedy].belong != currentplayer)
             for (int i = 1; i <= X; i++)
                 for (int j = 1; j <= Y; j++)
@@ -3309,6 +3477,8 @@ int main()
                     }
                 }
         }
+        if (mapmode == Pubg || mapmode == CFlag || mapmode == CPoints)
+            updateGrenade();
         savemap();
         turn++;
         if (isPaint)
