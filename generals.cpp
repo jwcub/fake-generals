@@ -1618,7 +1618,7 @@ struct Player
     }
     void respawn()
     {
-        playerac[playerid] = playeratk[playerid] = playerfh[playerid] = 0;
+        playerac[playerid] = playeratk[playerid] = playerfh[playerid] = playerGrenade[playerid] = 0;
         playermaxhp[playerid] = 100;
         ishavets[playerid] = false;
         isHaveSend[playerid] = false;
