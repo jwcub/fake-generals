@@ -1732,9 +1732,9 @@ struct Player
                     dp->tmp -= dmg2;
                     dt->tmp -= dmg1;
                     if (dp->tmp <= 0 && mapmode != 6 && mapmode != 7)
-                        dp->type = Empty_land, dp->tmp = 0, dp->belong = 0, alivegennum--, playeratk[dt->belong] += playeratk[dp->belong], playerac[dt->belong] += playerac[dp->belong], ishavets[dt->belong] |= ishavets[dp->belong], playerfh[dt->belong] += playerfh[dp->belong];
+                        dp->type = Empty_land, dp->tmp = 0, dp->belong = 0, alivegennum--, playeratk[dt->belong] += playeratk[dp->belong], playerac[dt->belong] += playerac[dp->belong], ishavets[dt->belong] |= ishavets[dp->belong], playerfh[dt->belong] += playerfh[dp->belong], playerGrenade[dt->belong] += playerGrenade[dp->belong];
                     if (dt->tmp <= 0 && mapmode != 6 && mapmode != 7)
-                        dt->type = Empty_land, dt->tmp = 0, dt->belong = 0, alivegennum--, playeratk[dp->belong] += playeratk[dt->belong], playerac[dp->belong] += playerac[dt->belong], ishavets[dp->belong] |= ishavets[dt->belong], playerfh[dp->belong] += playerfh[dt->belong];
+                        dt->type = Empty_land, dt->tmp = 0, dt->belong = 0, alivegennum--, playeratk[dp->belong] += playeratk[dt->belong], playerac[dp->belong] += playerac[dt->belong], ishavets[dp->belong] |= ishavets[dt->belong], playerfh[dp->belong] += playerfh[dt->belong], playerGrenade[dp->belong] += playerGrenade[dt->belong];
                 }
                 else
                 {
@@ -1848,9 +1848,9 @@ struct Player
                     dp->tmp -= dmg2;
                     dt->tmp -= dmg1;
                     if (dp->tmp <= 0 && mapmode != 6 && mapmode != 7)
-                        dp->type = Empty_land, dp->tmp = 0, dp->belong = 0, alivegennum--, playeratk[dt->belong] += playeratk[dp->belong], playerac[dt->belong] += playerac[dp->belong], ishavets[dt->belong] |= ishavets[dp->belong], playerfh[dt->belong] += playerfh[dp->belong];
+                        dp->type = Empty_land, dp->tmp = 0, dp->belong = 0, alivegennum--, playeratk[dt->belong] += playeratk[dp->belong], playerac[dt->belong] += playerac[dp->belong], ishavets[dt->belong] |= ishavets[dp->belong], playerfh[dt->belong] += playerfh[dp->belong], playerGrenade[dt->belong] += playerGrenade[dp->belong];
                     if (dt->tmp <= 0 && mapmode != 6 && mapmode != 7)
-                        dt->type = Empty_land, dt->tmp = 0, dt->belong = 0, alivegennum--, playeratk[dp->belong] += playeratk[dt->belong], playerac[dp->belong] += playerac[dt->belong], ishavets[dp->belong] |= ishavets[dt->belong], playerfh[dp->belong] += playerfh[dt->belong];
+                        dt->type = Empty_land, dt->tmp = 0, dt->belong = 0, alivegennum--, playeratk[dp->belong] += playeratk[dt->belong], playerac[dp->belong] += playerac[dt->belong], ishavets[dp->belong] |= ishavets[dt->belong], playerfh[dp->belong] += playerfh[dt->belong], playerGrenade[dp->belong] += playerGrenade[dt->belong];
                 }
                 else
                 {
@@ -1964,9 +1964,9 @@ struct Player
                     dp->tmp -= dmg2;
                     dt->tmp -= dmg1;
                     if (dp->tmp <= 0 && mapmode != 6 && mapmode != 7)
-                        dp->type = Empty_land, dp->tmp = 0, dp->belong = 0, alivegennum--, playeratk[dt->belong] += playeratk[dp->belong], playerac[dt->belong] += playerac[dp->belong], ishavets[dt->belong] |= ishavets[dp->belong], playerfh[dt->belong] += playerfh[dp->belong];
+                        dp->type = Empty_land, dp->tmp = 0, dp->belong = 0, alivegennum--, playeratk[dt->belong] += playeratk[dp->belong], playerac[dt->belong] += playerac[dp->belong], ishavets[dt->belong] |= ishavets[dp->belong], playerfh[dt->belong] += playerfh[dp->belong], playerGrenade[dt->belong] += playerGrenade[dp->belong];
                     if (dt->tmp <= 0 && mapmode != 6 && mapmode != 7)
-                        dt->type = Empty_land, dt->tmp = 0, dt->belong = 0, alivegennum--, playeratk[dp->belong] += playeratk[dt->belong], playerac[dp->belong] += playerac[dt->belong], ishavets[dp->belong] |= ishavets[dt->belong], playerfh[dp->belong] += playerfh[dt->belong];
+                        dt->type = Empty_land, dt->tmp = 0, dt->belong = 0, alivegennum--, playeratk[dp->belong] += playeratk[dt->belong], playerac[dp->belong] += playerac[dt->belong], ishavets[dp->belong] |= ishavets[dt->belong], playerfh[dp->belong] += playerfh[dt->belong], playerGrenade[dp->belong] += playerGrenade[dt->belong];
                 }
                 else
                 {
@@ -2080,9 +2080,9 @@ struct Player
                     dp->tmp -= dmg2;
                     dt->tmp -= dmg1;
                     if (dp->tmp <= 0 && mapmode != 6 && mapmode != 7)
-                        dp->type = Empty_land, dp->tmp = 0, dp->belong = 0, alivegennum--, playeratk[dt->belong] += playeratk[dp->belong], playerac[dt->belong] += playerac[dp->belong], ishavets[dt->belong] |= ishavets[dp->belong], playerfh[dt->belong] += playerfh[dp->belong];
+                        dp->type = Empty_land, dp->tmp = 0, dp->belong = 0, alivegennum--, playeratk[dt->belong] += playeratk[dp->belong], playerac[dt->belong] += playerac[dp->belong], ishavets[dt->belong] |= ishavets[dp->belong], playerfh[dt->belong] += playerfh[dp->belong], playerGrenade[dt->belong] += playerGrenade[dp->belong];
                     if (dt->tmp <= 0 && mapmode != 6 && mapmode != 7)
-                        dt->type = Empty_land, dt->tmp = 0, dt->belong = 0, alivegennum--, playeratk[dp->belong] += playeratk[dt->belong], playerac[dp->belong] += playerac[dt->belong], ishavets[dp->belong] |= ishavets[dt->belong], playerfh[dp->belong] += playerfh[dt->belong];
+                        dt->type = Empty_land, dt->tmp = 0, dt->belong = 0, alivegennum--, playeratk[dp->belong] += playeratk[dt->belong], playerac[dp->belong] += playerac[dt->belong], ishavets[dp->belong] |= ishavets[dt->belong], playerfh[dp->belong] += playerfh[dt->belong], playerGrenade[dp->belong] += playerGrenade[dt->belong];
                 }
                 else
                 {
