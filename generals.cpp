@@ -283,6 +283,7 @@ void convwall()
 }
 int etot, vtot, venum[105][105], id[1000005];
 int playermaxhp[105];
+bool isGMode;
 struct edge
 {
     int a, b, w, posa, posb;
@@ -2185,6 +2186,8 @@ struct Player
         }
         int x = q.front().first, y = q.front().second;
         q.pop();
+        if (isGMode)
+            playerGrenade[playerid] = 1;
         if (playerGrenade[playerid] > 0)
         {
             for (int i = x - 7; i <= x + 7; i++)
@@ -2656,6 +2659,18 @@ int main()
         if (mapopt == 1 || mapopt == 2)
             break;
     }
+    if ((mapmode == Pubg || mapmode == CFlag || mapmode == CPoints) && isreplay == 1)
+    {
+        int pp;
+        while (1)
+        {
+            printf("1 = 正常模式， 2 = 无限手雷模式\n");
+            scanf("%d", &pp);
+            if (pp == 1 || pp == 2)
+                break;
+        }
+        isGMode = (pp == 2);
+    }
     if (mapopt == 2)
         opt = true;
     if (isreplay == 1)
@@ -2851,6 +2866,8 @@ int main()
     {
         while (alivegennum > 1 && (!isPaint || isPaint && paintRemainTime > 0))
         {
+            if (isGMode)
+                playerGrenade[currentplayer] = 1;
             rm = dq - turn % dq;
             putmap(player[currentplayer].selectedx, player[currentplayer].selectedy, currentplayer);
             char inp = ' ';
@@ -3116,6 +3133,8 @@ int main()
         ifcanconvobject = true;
     while (aliveteamnum > 1 && (!isPaint || isPaint && paintRemainTime > 0))
     {
+        if (isGMode)
+            playerGrenade[currentplayer] = 1;
         rm = dq - turn % dq;
         putmap(player[currentplayer].selectedx, player[currentplayer].selectedy, currentplayer);
         char inp = ' ';
