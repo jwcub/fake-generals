@@ -678,7 +678,7 @@ void updateGrenade()
     for (vector<Grenade>::iterator it = currentGrenade.begin(); it != currentGrenade.end();)
     {
         Grenade &cur = *it;
-        if (dist(cur.cx, cur.cy, cur.ex, cur.ey) <= 1 || cur.cx < 1 || cur.cx > X || cur.cy < 1 || cur.cy > Y || cur.tmp >= 6)
+        if (dist(cur.cx, cur.cy, cur.ex, cur.ey) <= 1 || cur.cx < 1 || cur.cx > X || cur.cy < 1 || cur.cy > Y || cur.tmp >= (isGMode ? 10 : 6))
         {
             for (int i = cur.ex - 3; i <= cur.ex + 3; i++)
                 for (int j = cur.ey - 3; j <= cur.ey + 3; j++)
@@ -2188,10 +2188,11 @@ struct Player
         q.pop();
         if (isGMode)
             playerGrenade[playerid] = 1;
+        int tmp = (isGMode ? 10 : 7);
         if (playerGrenade[playerid] > 0)
         {
-            for (int i = x - 7; i <= x + 7; i++)
-                for (int j = y - 7; j <= y + 7; j++)
+            for (int i = x - tmp; i <= x + tmp; i++)
+                for (int j = y - tmp; j <= y + tmp; j++)
                     if (i >= 1 && i <= X && j >= 1 && j <= Y && sight[playerid][i][j] && mp[i][j].type == General && (mode == Ffa || mode == Tdm && Inteam[mp[i][j].belong] != Inteam[playerid]) && mp[i][j].belong != playerid)
                     {
                         if (playerGrenade[playerid] > 0)
