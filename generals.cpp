@@ -2205,29 +2205,38 @@ void mapEditor()
 {
     system("cls");
     int opt = 0;
+    int slx = 0, sly = 0;
+    if (X > 15 || Y > 15)
+    {
+        slx = (X >> 1), sly = (Y >> 1);
+    }
     while (1)
     {
         for (int i = 1; i <= X; i++)
             for (int j = 1; j <= Y; j++)
-                sight[1][i][j] = true;
-        putmap(0, 0, 1);
+                sight[0][i][j] = true;
+        putmap(slx, sly, 0);
         if (opt == 0)
             printf("修改类型\n");
         else if (opt == 1)
             printf("修改颜色\n");
-        else
+        else if (opt == 2)
         {
             printf("修改兵力\n");
         }
+        else if (opt == 3)
+        {
+            printf("选择\n");
+        }
         if (KEY_DOWN('F'))
-            opt = (opt + 1) % 3;
+            opt = (opt + 1) % 4;
         if (KEY_DOWN('E'))
             break;
         if (KEY_DOWN(MOUSE_MOVED))
         {
             GetCursorPos(&p1);
-            int sp = int(round((double(p1.y) - double(xx1)) / dx)) + 1;
-            int sq = int(round((double(p1.x) - double(yy1)) / dy)) + 1;
+            int sp = int(round((double(p1.y) - double(xx1)) / dx)) + 1 + (X > 15 ? slx - 8 : 0);
+            int sq = int(round((double(p1.x) - double(yy1)) / dy)) + 1 + (Y > 15 ? sly - 8 : 0);
             if (opt == 0)
             {
                 int tmp;
@@ -2242,12 +2251,17 @@ void mapEditor()
                 cin >> tmp;
                 mp[sp][sq].belong = tmp;
             }
-            else
+            else if (opt == 2)
             {
                 int tmp;
                 printf("输入修改后的兵力...");
                 cin >> tmp;
                 mp[sp][sq].tmp = tmp;
+            }
+            else if (opt == 3)
+            {
+                slx = sp;
+                sly = sq;
             }
         }
         Sleep(300);
@@ -2453,19 +2467,6 @@ int main()
             }
         }
     }
-    if (X <= 15 && Y <= 15 && gennum <= 8)
-    {
-        int isDiy;
-        while (1)
-        {
-            printf("是否进入地图编辑器？(1 = 是, 0 = 否）\n");
-            scanf("%d", &isDiy);
-            if (isDiy == 1 || isDiy == 0)
-                break;
-        }
-        if (isDiy)
-            mapEditor();
-    }
     memset(sight, 0, sizeof(sight));
     int keys[5] = {'W', 'S', 'A', 'D', 'Z'};
     int turn = 1;
@@ -2506,6 +2507,16 @@ int main()
             pubgconv();
         if (mapmode == 7)
             pointsmatchconv();
+        int isDiy;
+        while (1)
+        {
+            printf("是否进入地图编辑器？(1 = 是, 0 = 否）\n");
+            scanf("%d", &isDiy);
+            if (isDiy == 1 || isDiy == 0)
+                break;
+        }
+        if (isDiy)
+            mapEditor();
         system("cls");
     }
     if (isreplay == 2)
