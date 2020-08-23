@@ -73,7 +73,7 @@ enum game_mode
 };
 enum map_mode
 {
-    NNil,
+    Diy,
     Random,
     Blank,
     Maze,
@@ -2512,6 +2512,73 @@ void itObjects()
     return;
 }
 int miniMapOpt;
+POINT p1, p2;
+double dx, dy;
+LONG xx1, yy1, xx2, yy2;
+void mapEditor()
+{
+    system("cls");
+    if (X > 15 || Y > 15 || gennum > 8)
+    {
+        printf("暂不支持编辑此类地图\n");
+        convmap();
+        congen();
+        concit();
+        convwall();
+        system("pause");
+        return;
+    }
+    convmap();
+    int opt = 0;
+    while (1)
+    {
+        for (int i = 1; i <= X; i++)
+            for (int j = 1; j <= Y; j++)
+                sight[1][i][j] = true;
+        putmap(0, 0, 1);
+        if (opt == 0)
+            printf("修改类型\n");
+        else if (opt == 1)
+            printf("修改颜色\n");
+        else
+        {
+            printf("修改兵力\n");
+        }
+        if (KEY_DOWN('F'))
+            opt = (opt + 1) % 3;
+        if (KEY_DOWN('E'))
+            break;
+        if (KEY_DOWN(MOUSE_MOVED))
+        {
+            GetCursorPos(&p1);
+            int sp = int(round((double(p1.y) - double(xx1)) / dx)) + 1;
+            int sq = int(round((double(p1.x) - double(yy1)) / dy)) + 1;
+            if (opt == 0)
+            {
+                int tmp;
+                printf("输入修改后的类型...");
+                cin >> tmp;
+                mp[sp][sq].type = (land_type)tmp;
+            }
+            else if (opt == 1)
+            {
+                int tmp;
+                printf("输入修改后的颜色...");
+                cin >> tmp;
+                mp[sp][sq].belong = tmp;
+            }
+            else
+            {
+                int tmp;
+                printf("输入修改后的兵力...");
+                cin >> tmp;
+                mp[sp][sq].tmp = tmp;
+            }
+        }
+        Sleep(300);
+    }
+    return;
+}
 int main()
 {
     system("title generals");
@@ -2537,7 +2604,6 @@ int main()
     putmap(player[1].selectedx, player[1].selectedy, 1);
     printf("请将鼠标移到右上角的9……\n");
     system("pause");
-    POINT p1, p2;
     GetCursorPos(&p1);
     mp[15][1].type = Land;
     mp[15][1].belong = 1;
@@ -2549,10 +2615,9 @@ int main()
     printf("请将鼠标移到左下角的9……\n");
     system("pause");
     GetCursorPos(&p2);
-    LONG xx1, yy1, xx2, yy2;
     xx1 = p1.y, yy1 = p2.x, xx2 = p2.y, yy2 = p1.x;
-    double dx = double(xx2 - xx1) / 14.0;
-    double dy = double(yy2 - yy1) / 14.0;
+    dx = double(xx2 - xx1) / 14.0;
+    dy = double(yy2 - yy1) / 14.0;
     system("cls");
     starting = false;
     printf("干得好。接下来请不要移动窗口，也不要调整窗口的大小。\n");
@@ -2588,7 +2653,7 @@ int main()
         }
         while (1)
         {
-            printf("选择地图：1 = 随机地图， 2 = 空白地图， 3 = 迷宫地图， 4 = 端午地图， 5  = 吃鸡地图， 6 = 夺旗地图， 7 = 占点地图， 8 = 涂色地图，\n9 = 堑壕地图\n");
+            printf("选择地图：0 = 自定义地图， 1 = 随机地图， 2 = 空白地图， 3 = 迷宫地图， 4 = 端午地图， 5  = 吃鸡地图， 6 = 夺旗地图， 7 = 占点地图， 8 = 涂色地图，\n9 = 堑壕地图\n");
             scanf("%d", &mapmode);
             if (mode == 1 && mapmode == 6)
             {
@@ -2600,7 +2665,7 @@ int main()
                 printf("抱歉，占点地图不支持FFA模式。\n");
                 continue;
             }
-            if (mapmode == 1 || mapmode == 2 || mapmode == 3 || mapmode == 4 || mapmode == 5 || mapmode == 6 || mapmode == 7 || mapmode == 8 || mapmode == 9)
+            if (mapmode == 0 || mapmode == 1 || mapmode == 2 || mapmode == 3 || mapmode == 4 || mapmode == 5 || mapmode == 6 || mapmode == 7 || mapmode == 8 || mapmode == 9)
                 break;
         }
         int ifown;
@@ -2700,6 +2765,10 @@ int main()
             isPaint = true;
             mapmode = Blank;
             congen();
+        }
+        else if (mapmode == Diy)
+        {
+            mapEditor();
         }
     }
     memset(sight, 0, sizeof(sight));
