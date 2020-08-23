@@ -104,7 +104,7 @@ struct node
 } mp[105][105];
 
 int X = 15, Y = 15;     //地图的长和宽。如果以迷宫地图，请确保地图的长和宽均为奇数
-double wallpr = 0.05;   //墙的密度
+double wallpr = 0.13;   //墙的密度
 double citypr = 0.05;   //城市的密度
 double objectpr = 0.06; //道具的密度
 int tpt = 100;          //每个回合后的等待时间。如果想体验原速，建议设为 400
@@ -1684,119 +1684,126 @@ struct Player
         alivegennum--;
         return;
     }
+    void updMovement(node *dp, node *dt, int *opt, int tmp, bool iskt)
+    {
+        if (mode == 2 && (dt->type == General || dt->type == Land || dt->type == 5) && dt->belong != playerid && ifteam[Inteam[playerid]].find(dt->belong) != ifteam[Inteam[playerid]].end())
+            return;
+        if (mapmode == 5 && iskt)
+            return;
+        if (dt->type == 20)
+            return;
+        int moved = (dp->tmp) - 1;
+        if (mapmode != 5 && mapmode != 6 && mapmode != 7)
+        {
+            if (halfselect)
+                moved >>= 1, halfselect = false;
+            if (dt->type == Empty_city && dt->tmp >= moved)
+                return;
+            dp->tmp -= moved;
+            if (dt->belong == playerid)
+                dt->tmp += moved;
+            else
+            {
+                if (moved > dt->tmp)
+                {
+                    dt->tmp = moved - dt->tmp;
+                    if (dt->type == General)
+                        dt->type = City, kil(dt->belong);
+                    else
+                    {
+                        dt->belong = playerid;
+                        if (dt->type == Empty_land)
+                            dt->type = Land;
+                        if (dt->type == Empty_city)
+                            dt->type = City;
+                    }
+                }
+                else
+                    dt->tmp -= moved;
+            }
+            *opt += tmp;
+        }
+        else
+        {
+            if (dt->type == General)
+            {
+                int dmg1 = max(0, int(double(dp->tmp) * (1.0 + double(playeratk[playerid]) / 10.0) - double(playerac[dt->belong]) * 10.0));
+                int dmg2 = max(0, int(double(dt->tmp) * (1.0 + double(playeratk[dt->belong]) / 10.0) - double(playerac[playerid]) * 10.0));
+                dp->tmp -= dmg2;
+                dt->tmp -= dmg1;
+                if (dp->tmp <= 0 && mapmode != 6 && mapmode != 7)
+                    dp->type = Empty_land, dp->tmp = 0, dp->belong = 0, alivegennum--, playeratk[dt->belong] += playeratk[dp->belong], playerac[dt->belong] += playerac[dp->belong], ishavets[dt->belong] |= ishavets[dp->belong], playerfh[dt->belong] += playerfh[dp->belong], playerGrenade[dt->belong] += playerGrenade[dp->belong];
+                if (dt->tmp <= 0 && mapmode != 6 && mapmode != 7)
+                    dt->type = Empty_land, dt->tmp = 0, dt->belong = 0, alivegennum--, playeratk[dp->belong] += playeratk[dt->belong], playerac[dp->belong] += playerac[dt->belong], ishavets[dp->belong] |= ishavets[dt->belong], playerfh[dp->belong] += playerfh[dt->belong], playerGrenade[dp->belong] += playerGrenade[dt->belong];
+            }
+            else
+            {
+                if (dt->type == 6)
+                    dp->tmp += 10, dt->type = Empty_land, aliveobjectnum--;
+                if (dt->type == 7)
+                    playerac[dp->belong]++, dt->type = Empty_land, aliveobjectnum--;
+                if (dt->type == 8)
+                    playeratk[dp->belong]++, dt->type = Empty_land, aliveobjectnum--;
+                if (dt->type == 11)
+                    dp->tmp += 30, dt->type = Empty_land, aliveobjectnum--;
+                if (dt->type == 12)
+                    playerac[dp->belong] += 3, dt->type = Empty_land, aliveobjectnum--;
+                if (dt->type == 13)
+                    playeratk[dp->belong] += 3, dt->type = Empty_land, aliveobjectnum--;
+                if (dt->type == 14)
+                    blindtimeremain[dp->belong] = 10, dt->type = Empty_land, aliveobjectnum--;
+                if (dt->type == 15)
+                    playermaxhp[dp->belong] += 10, dt->type = Empty_land, aliveobjectnum--;
+                if (dt->type == 16)
+                    playermaxhp[dp->belong] += 30, dt->type = Empty_land, aliveobjectnum--;
+                if (dt->type == 17)
+                    ishavets[dp->belong] = true, dt->type = Empty_land, aliveobjectnum--;
+                if (dt->type == 18)
+                    playerfh[dp->belong]++, dt->type = Empty_land, aliveobjectnum--;
+                if (dt->type == 19)
+                    playerfh[dp->belong] += 3, dt->type = Empty_land, aliveobjectnum--;
+                if (dt->type == Send)
+                    isHaveSend[dp->belong] = true, dt->type = Empty_land, aliveobjectnum--;
+                if (dt->type == Grrenade)
+                    playerGrenade[dp->belong]++, dt->type = Empty_land, aliveobjectnum--;
+                if (dt->type == 9)
+                {
+                    if (dt->belong != Inteam[playerid] && !ifgetflag[playerid])
+                    {
+                        ifgetflag[playerid] = dt->belong;
+                        dt->type = Empty_flag;
+                        news[newsr].a = playerid;
+                        news[newsr].b = dt->belong;
+                        news[newsr].opt = 1;
+                        news[newsr].remtime = 50;
+                        newsr++;
+                    }
+                    else if (dt->belong == Inteam[playerid] && selectedx - 1 == flg[dt->belong].sx && selectedy == flg[dt->belong].sy && ifgetflag[playerid])
+                    {
+                        mp[flg[ifgetflag[playerid]].sx][flg[ifgetflag[playerid]].sy].type = Flag, mp[flg[ifgetflag[playerid]].sx][flg[ifgetflag[playerid]].sy].belong = flg[ifgetflag[playerid]].belong;
+                        flagscore[Inteam[playerid]]++;
+                        news[newsr].a = playerid;
+                        news[newsr].opt = 3;
+                        news[newsr].remtime = 50;
+                        newsr++;
+                        ifgetflag[playerid] = 0;
+                    }
+                    return;
+                }
+                else if (dt->type == 10)
+                    return;
+                swap(*dt, *dp);
+            }
+            *opt += tmp;
+        }
+        return;
+    }
     void moveup()
     {
         if (mp[selectedx][selectedy].belong == playerid && mp[selectedx - 1][selectedy].type != Wall && mp[selectedx][selectedy].tmp > 1)
         {
             node *dp = &mp[selectedx][selectedy], *dt = &mp[selectedx - 1][selectedy];
-            if (mode == 2 && (dt->type == General || dt->type == Land || dt->type == 5) && dt->belong != playerid && ifteam[Inteam[playerid]].find(dt->belong) != ifteam[Inteam[playerid]].end())
-                return;
-            if (mapmode == 5 && iskt[selectedx - 1][selectedy])
-                return;
-            if (dt->type == 20)
-                return;
-            int moved = (dp->tmp) - 1;
-            if (mapmode != 5 && mapmode != 6 && mapmode != 7)
-            {
-                if (halfselect)
-                    moved >>= 1, halfselect = false;
-                dp->tmp -= moved;
-                if (dt->belong == playerid)
-                    dt->tmp += moved;
-                else
-                {
-                    if (moved > dt->tmp)
-                    {
-                        dt->tmp = moved - dt->tmp;
-                        if (dt->type == General)
-                            dt->type = City, kil(dt->belong);
-                        else
-                        {
-                            dt->belong = playerid;
-                            if (dt->type == Empty_land)
-                                dt->type = Land;
-                            if (dt->type == Empty_city)
-                                dt->type = City;
-                        }
-                    }
-                    else
-                        dt->tmp -= moved;
-                }
-                selectedx--;
-            }
-            else
-            {
-                if (dt->type == General)
-                {
-                    int dmg1 = max(0, int(double(dp->tmp) * (1.0 + double(playeratk[playerid]) / 10.0) - double(playerac[dt->belong]) * 10.0));
-                    int dmg2 = max(0, int(double(dt->tmp) * (1.0 + double(playeratk[dt->belong]) / 10.0) - double(playerac[playerid]) * 10.0));
-                    dp->tmp -= dmg2;
-                    dt->tmp -= dmg1;
-                    if (dp->tmp <= 0 && mapmode != 6 && mapmode != 7)
-                        dp->type = Empty_land, dp->tmp = 0, dp->belong = 0, alivegennum--, playeratk[dt->belong] += playeratk[dp->belong], playerac[dt->belong] += playerac[dp->belong], ishavets[dt->belong] |= ishavets[dp->belong], playerfh[dt->belong] += playerfh[dp->belong], playerGrenade[dt->belong] += playerGrenade[dp->belong];
-                    if (dt->tmp <= 0 && mapmode != 6 && mapmode != 7)
-                        dt->type = Empty_land, dt->tmp = 0, dt->belong = 0, alivegennum--, playeratk[dp->belong] += playeratk[dt->belong], playerac[dp->belong] += playerac[dt->belong], ishavets[dp->belong] |= ishavets[dt->belong], playerfh[dp->belong] += playerfh[dt->belong], playerGrenade[dp->belong] += playerGrenade[dt->belong];
-                }
-                else
-                {
-                    if (dt->type == 6)
-                        dp->tmp += 10, dt->type = Empty_land, aliveobjectnum--;
-                    if (dt->type == 7)
-                        playerac[dp->belong]++, dt->type = Empty_land, aliveobjectnum--;
-                    if (dt->type == 8)
-                        playeratk[dp->belong]++, dt->type = Empty_land, aliveobjectnum--;
-                    if (dt->type == 11)
-                        dp->tmp += 30, dt->type = Empty_land, aliveobjectnum--;
-                    if (dt->type == 12)
-                        playerac[dp->belong] += 3, dt->type = Empty_land, aliveobjectnum--;
-                    if (dt->type == 13)
-                        playeratk[dp->belong] += 3, dt->type = Empty_land, aliveobjectnum--;
-                    if (dt->type == 14)
-                        blindtimeremain[dp->belong] = 10, dt->type = Empty_land, aliveobjectnum--;
-                    if (dt->type == 15)
-                        playermaxhp[dp->belong] += 10, dt->type = Empty_land, aliveobjectnum--;
-                    if (dt->type == 16)
-                        playermaxhp[dp->belong] += 30, dt->type = Empty_land, aliveobjectnum--;
-                    if (dt->type == 17)
-                        ishavets[dp->belong] = true, dt->type = Empty_land, aliveobjectnum--;
-                    if (dt->type == 18)
-                        playerfh[dp->belong]++, dt->type = Empty_land, aliveobjectnum--;
-                    if (dt->type == 19)
-                        playerfh[dp->belong] += 3, dt->type = Empty_land, aliveobjectnum--;
-                    if (dt->type == Send)
-                        isHaveSend[dp->belong] = true, dt->type = Empty_land, aliveobjectnum--;
-                    if (dt->type == Grrenade)
-                        playerGrenade[dp->belong]++, dt->type = Empty_land, aliveobjectnum--;
-                    if (dt->type == 9)
-                    {
-                        if (dt->belong != Inteam[playerid] && !ifgetflag[playerid])
-                        {
-                            ifgetflag[playerid] = dt->belong;
-                            dt->type = Empty_flag;
-                            news[newsr].a = playerid;
-                            news[newsr].b = dt->belong;
-                            news[newsr].opt = 1;
-                            news[newsr].remtime = 50;
-                            newsr++;
-                        }
-                        else if (dt->belong == Inteam[playerid] && selectedx - 1 == flg[dt->belong].sx && selectedy == flg[dt->belong].sy && ifgetflag[playerid])
-                        {
-                            mp[flg[ifgetflag[playerid]].sx][flg[ifgetflag[playerid]].sy].type = Flag, mp[flg[ifgetflag[playerid]].sx][flg[ifgetflag[playerid]].sy].belong = flg[ifgetflag[playerid]].belong;
-                            flagscore[Inteam[playerid]]++;
-                            news[newsr].a = playerid;
-                            news[newsr].opt = 3;
-                            news[newsr].remtime = 50;
-                            newsr++;
-                            ifgetflag[playerid] = 0;
-                        }
-                        return;
-                    }
-                    else if (dt->type == 10)
-                        return;
-                    swap(*dt, *dp);
-                }
-                selectedx--;
-            }
+            updMovement(dp, dt, &selectedx, -1, iskt[selectedx - 1][selectedy]);
         }
         return;
     }
@@ -1805,114 +1812,7 @@ struct Player
         if (mp[selectedx][selectedy].belong == playerid && mp[selectedx + 1][selectedy].type != Wall && mp[selectedx][selectedy].tmp > 1)
         {
             node *dp = &mp[selectedx][selectedy], *dt = &mp[selectedx + 1][selectedy];
-            if (mode == 2 && (dt->type == General || dt->type == Land || dt->type == 5) && dt->belong != playerid && ifteam[Inteam[playerid]].find(dt->belong) != ifteam[Inteam[playerid]].end())
-                return;
-            if (mapmode == 5 && iskt[selectedx + 1][selectedy])
-                return;
-            if (dt->type == 20)
-                return;
-            int moved = dp->tmp - 1;
-            if (mapmode != 5 && mapmode != 6 && mapmode != 7)
-            {
-                if (halfselect)
-                    moved >>= 1, halfselect = false;
-                dp->tmp -= moved;
-                if (dt->belong == playerid)
-                    dt->tmp += moved;
-                else
-                {
-                    if (moved > dt->tmp)
-                    {
-                        dt->tmp = moved - dt->tmp;
-                        if (dt->type == General)
-                            dt->type = City, kil(dt->belong);
-                        else
-                        {
-                            dt->belong = playerid;
-                            if (dt->type == Empty_land)
-                                dt->type = Land;
-                            if (dt->type == Empty_city)
-                                dt->type = City;
-                        }
-                    }
-                    else
-                        dt->tmp -= moved;
-                }
-                selectedx++;
-            }
-            else
-            {
-                if (dt->type == General)
-                {
-                    int dmg1 = max(0, int(double(dp->tmp) * (1.0 + double(playeratk[playerid]) / 10.0) - double(playerac[dt->belong]) * 10.0));
-                    int dmg2 = max(0, int(double(dt->tmp) * (1.0 + double(playeratk[dt->belong]) / 10.0) - double(playerac[playerid]) * 10.0));
-                    dp->tmp -= dmg2;
-                    dt->tmp -= dmg1;
-                    if (dp->tmp <= 0 && mapmode != 6 && mapmode != 7)
-                        dp->type = Empty_land, dp->tmp = 0, dp->belong = 0, alivegennum--, playeratk[dt->belong] += playeratk[dp->belong], playerac[dt->belong] += playerac[dp->belong], ishavets[dt->belong] |= ishavets[dp->belong], playerfh[dt->belong] += playerfh[dp->belong], playerGrenade[dt->belong] += playerGrenade[dp->belong];
-                    if (dt->tmp <= 0 && mapmode != 6 && mapmode != 7)
-                        dt->type = Empty_land, dt->tmp = 0, dt->belong = 0, alivegennum--, playeratk[dp->belong] += playeratk[dt->belong], playerac[dp->belong] += playerac[dt->belong], ishavets[dp->belong] |= ishavets[dt->belong], playerfh[dp->belong] += playerfh[dt->belong], playerGrenade[dp->belong] += playerGrenade[dt->belong];
-                }
-                else
-                {
-                    if (dt->type == 6)
-                        dp->tmp += 10, dt->type = Empty_land, aliveobjectnum--;
-                    if (dt->type == 7)
-                        playerac[dp->belong]++, dt->type = Empty_land, aliveobjectnum--;
-                    if (dt->type == 8)
-                        playeratk[dp->belong]++, dt->type = Empty_land, aliveobjectnum--;
-                    if (dt->type == 11)
-                        dp->tmp += 30, dt->type = Empty_land, aliveobjectnum--;
-                    if (dt->type == 12)
-                        playerac[dp->belong] += 3, dt->type = Empty_land, aliveobjectnum--;
-                    if (dt->type == 13)
-                        playeratk[dp->belong] += 3, dt->type = Empty_land, aliveobjectnum--;
-                    if (dt->type == 14)
-                        blindtimeremain[dp->belong] = 10, dt->type = Empty_land, aliveobjectnum--;
-                    if (dt->type == 15)
-                        playermaxhp[dp->belong] += 10, dt->type = Empty_land, aliveobjectnum--;
-                    if (dt->type == 16)
-                        playermaxhp[dp->belong] += 30, dt->type = Empty_land, aliveobjectnum--;
-                    if (dt->type == 17)
-                        ishavets[dp->belong] = true, dt->type = Empty_land, aliveobjectnum--;
-                    if (dt->type == 18)
-                        playerfh[dp->belong]++, dt->type = Empty_land, aliveobjectnum--;
-                    if (dt->type == 19)
-                        playerfh[dp->belong] += 3, dt->type = Empty_land, aliveobjectnum--;
-                    if (dt->type == Send)
-                        isHaveSend[dp->belong] = true, dt->type = Empty_land, aliveobjectnum--;
-                    if (dt->type == Grrenade)
-                        playerGrenade[dp->belong]++, dt->type = Empty_land, aliveobjectnum--;
-                    if (dt->type == 9)
-                    {
-                        if (dt->belong != Inteam[playerid] && !ifgetflag[playerid])
-                        {
-                            ifgetflag[playerid] = dt->belong;
-                            dt->type = Empty_flag;
-                            news[newsr].a = playerid;
-                            news[newsr].b = dt->belong;
-                            news[newsr].opt = 1;
-                            news[newsr].remtime = 50;
-                            newsr++;
-                        }
-                        else if (dt->belong == Inteam[playerid] && selectedx + 1 == flg[dt->belong].sx && selectedy == flg[dt->belong].sy && ifgetflag[playerid])
-                        {
-                            mp[flg[ifgetflag[playerid]].sx][flg[ifgetflag[playerid]].sy].type = Flag, mp[flg[ifgetflag[playerid]].sx][flg[ifgetflag[playerid]].sy].belong = flg[ifgetflag[playerid]].belong;
-                            flagscore[Inteam[playerid]]++;
-                            news[newsr].a = playerid;
-                            news[newsr].opt = 3;
-                            news[newsr].remtime = 50;
-                            newsr++;
-                            ifgetflag[playerid] = 0;
-                        }
-                        return;
-                    }
-                    else if (dt->type == 10)
-                        return;
-                    swap(*dt, *dp);
-                }
-                selectedx++;
-            }
+            updMovement(dp, dt, &selectedx, 1, iskt[selectedx + 1][selectedy]);
         }
         return;
     }
@@ -1921,114 +1821,7 @@ struct Player
         if (mp[selectedx][selectedy].belong == playerid && mp[selectedx][selectedy - 1].type != Wall && mp[selectedx][selectedy].tmp > 1)
         {
             node *dp = &mp[selectedx][selectedy], *dt = &mp[selectedx][selectedy - 1];
-            if (mode == 2 && (dt->type == General || dt->type == Land || dt->type == 5) && dt->belong != playerid && ifteam[Inteam[playerid]].find(dt->belong) != ifteam[Inteam[playerid]].end())
-                return;
-            if (mapmode == 5 && iskt[selectedx][selectedy - 1])
-                return;
-            if (dt->type == 20)
-                return;
-            int moved = dp->tmp - 1;
-            if (mapmode != 5 && mapmode != 6 && mapmode != 7)
-            {
-                if (halfselect)
-                    moved >>= 1, halfselect = false;
-                dp->tmp -= moved;
-                if (dt->belong == playerid)
-                    dt->tmp += moved;
-                else
-                {
-                    if (moved > dt->tmp)
-                    {
-                        dt->tmp = moved - dt->tmp;
-                        if (dt->type == General)
-                            dt->type = City, kil(dt->belong);
-                        else
-                        {
-                            dt->belong = playerid;
-                            if (dt->type == Empty_land)
-                                dt->type = Land;
-                            if (dt->type == Empty_city)
-                                dt->type = City;
-                        }
-                    }
-                    else
-                        dt->tmp -= moved;
-                }
-                selectedy--;
-            }
-            else
-            {
-                if (dt->type == General)
-                {
-                    int dmg1 = max(0, int(double(dp->tmp) * (1.0 + double(playeratk[playerid]) / 10.0) - double(playerac[dt->belong]) * 10.0));
-                    int dmg2 = max(0, int(double(dt->tmp) * (1.0 + double(playeratk[dt->belong]) / 10.0) - double(playerac[playerid]) * 10.0));
-                    dp->tmp -= dmg2;
-                    dt->tmp -= dmg1;
-                    if (dp->tmp <= 0 && mapmode != 6 && mapmode != 7)
-                        dp->type = Empty_land, dp->tmp = 0, dp->belong = 0, alivegennum--, playeratk[dt->belong] += playeratk[dp->belong], playerac[dt->belong] += playerac[dp->belong], ishavets[dt->belong] |= ishavets[dp->belong], playerfh[dt->belong] += playerfh[dp->belong], playerGrenade[dt->belong] += playerGrenade[dp->belong];
-                    if (dt->tmp <= 0 && mapmode != 6 && mapmode != 7)
-                        dt->type = Empty_land, dt->tmp = 0, dt->belong = 0, alivegennum--, playeratk[dp->belong] += playeratk[dt->belong], playerac[dp->belong] += playerac[dt->belong], ishavets[dp->belong] |= ishavets[dt->belong], playerfh[dp->belong] += playerfh[dt->belong], playerGrenade[dp->belong] += playerGrenade[dt->belong];
-                }
-                else
-                {
-                    if (dt->type == 6)
-                        dp->tmp += 10, dt->type = Empty_land, aliveobjectnum--;
-                    if (dt->type == 7)
-                        playerac[dp->belong]++, dt->type = Empty_land, aliveobjectnum--;
-                    if (dt->type == 8)
-                        playeratk[dp->belong]++, dt->type = Empty_land, aliveobjectnum--;
-                    if (dt->type == 11)
-                        dp->tmp += 30, dt->type = Empty_land, aliveobjectnum--;
-                    if (dt->type == 12)
-                        playerac[dp->belong] += 3, dt->type = Empty_land, aliveobjectnum--;
-                    if (dt->type == 13)
-                        playeratk[dp->belong] += 3, dt->type = Empty_land, aliveobjectnum--;
-                    if (dt->type == 14)
-                        blindtimeremain[dp->belong] = 10, dt->type = Empty_land, aliveobjectnum--;
-                    if (dt->type == 15)
-                        playermaxhp[dp->belong] += 10, dt->type = Empty_land, aliveobjectnum--;
-                    if (dt->type == 16)
-                        playermaxhp[dp->belong] += 30, dt->type = Empty_land, aliveobjectnum--;
-                    if (dt->type == 17)
-                        ishavets[dp->belong] = true, dt->type = Empty_land, aliveobjectnum--;
-                    if (dt->type == 18)
-                        playerfh[dp->belong]++, dt->type = Empty_land, aliveobjectnum--;
-                    if (dt->type == 19)
-                        playerfh[dp->belong] += 3, dt->type = Empty_land, aliveobjectnum--;
-                    if (dt->type == Send)
-                        isHaveSend[dp->belong] = true, dt->type = Empty_land, aliveobjectnum--;
-                    if (dt->type == Grrenade)
-                        playerGrenade[dp->belong]++, dt->type = Empty_land, aliveobjectnum--;
-                    if (dt->type == 9)
-                    {
-                        if (dt->belong != Inteam[playerid] && !ifgetflag[playerid])
-                        {
-                            ifgetflag[playerid] = dt->belong;
-                            dt->type = Empty_flag;
-                            news[newsr].a = playerid;
-                            news[newsr].b = dt->belong;
-                            news[newsr].opt = 1;
-                            news[newsr].remtime = 50;
-                            newsr++;
-                        }
-                        else if (dt->belong == Inteam[playerid] && selectedx == flg[dt->belong].sx && selectedy - 1 == flg[dt->belong].sy && ifgetflag[playerid])
-                        {
-                            mp[flg[ifgetflag[playerid]].sx][flg[ifgetflag[playerid]].sy].type = Flag, mp[flg[ifgetflag[playerid]].sx][flg[ifgetflag[playerid]].sy].belong = flg[ifgetflag[playerid]].belong;
-                            flagscore[Inteam[playerid]]++;
-                            news[newsr].a = playerid;
-                            news[newsr].opt = 3;
-                            news[newsr].remtime = 50;
-                            newsr++;
-                            ifgetflag[playerid] = 0;
-                        }
-                        return;
-                    }
-                    else if (dt->type == 10)
-                        return;
-                    swap(*dt, *dp);
-                }
-                selectedy--;
-            }
+            updMovement(dp, dt, &selectedy, -1, iskt[selectedx][selectedy - 1]);
         }
         return;
     }
@@ -2037,114 +1830,7 @@ struct Player
         if (mp[selectedx][selectedy].belong == playerid && mp[selectedx][selectedy + 1].type != Wall && mp[selectedx][selectedy].tmp > 1)
         {
             node *dp = &mp[selectedx][selectedy], *dt = &mp[selectedx][selectedy + 1];
-            if (mode == 2 && (dt->type == General || dt->type == Land || dt->type == 5) && dt->belong != playerid && ifteam[Inteam[playerid]].find(dt->belong) != ifteam[Inteam[playerid]].end())
-                return;
-            if (mapmode == 5 && iskt[selectedx][selectedy + 1])
-                return;
-            if (dt->type == 20)
-                return;
-            int moved = dp->tmp - 1;
-            if (mapmode != 5 && mapmode != 6 && mapmode != 7)
-            {
-                if (halfselect)
-                    moved >>= 1, halfselect = false;
-                dp->tmp -= moved;
-                if (dt->belong == playerid)
-                    dt->tmp += moved;
-                else
-                {
-                    if (moved > dt->tmp)
-                    {
-                        dt->tmp = moved - dt->tmp;
-                        if (dt->type == General)
-                            dt->type = City, kil(dt->belong);
-                        else
-                        {
-                            dt->belong = playerid;
-                            if (dt->type == Empty_land)
-                                dt->type = Land;
-                            if (dt->type == Empty_city)
-                                dt->type = City;
-                        }
-                    }
-                    else
-                        dt->tmp -= moved;
-                }
-                selectedy++;
-            }
-            else
-            {
-                if (dt->type == General)
-                {
-                    int dmg1 = max(0, int(double(dp->tmp) * (1.0 + double(playeratk[playerid]) / 10.0) - double(playerac[dt->belong]) * 10.0));
-                    int dmg2 = max(0, int(double(dt->tmp) * (1.0 + double(playeratk[dt->belong]) / 10.0) - double(playerac[playerid]) * 10.0));
-                    dp->tmp -= dmg2;
-                    dt->tmp -= dmg1;
-                    if (dp->tmp <= 0 && mapmode != 6 && mapmode != 7)
-                        dp->type = Empty_land, dp->tmp = 0, dp->belong = 0, alivegennum--, playeratk[dt->belong] += playeratk[dp->belong], playerac[dt->belong] += playerac[dp->belong], ishavets[dt->belong] |= ishavets[dp->belong], playerfh[dt->belong] += playerfh[dp->belong], playerGrenade[dt->belong] += playerGrenade[dp->belong];
-                    if (dt->tmp <= 0 && mapmode != 6 && mapmode != 7)
-                        dt->type = Empty_land, dt->tmp = 0, dt->belong = 0, alivegennum--, playeratk[dp->belong] += playeratk[dt->belong], playerac[dp->belong] += playerac[dt->belong], ishavets[dp->belong] |= ishavets[dt->belong], playerfh[dp->belong] += playerfh[dt->belong], playerGrenade[dp->belong] += playerGrenade[dt->belong];
-                }
-                else
-                {
-                    if (dt->type == 6)
-                        dp->tmp += 10, dt->type = Empty_land, aliveobjectnum--;
-                    if (dt->type == 7)
-                        playerac[dp->belong]++, dt->type = Empty_land, aliveobjectnum--;
-                    if (dt->type == 8)
-                        playeratk[dp->belong]++, dt->type = Empty_land, aliveobjectnum--;
-                    if (dt->type == 11)
-                        dp->tmp += 30, dt->type = Empty_land, aliveobjectnum--;
-                    if (dt->type == 12)
-                        playerac[dp->belong] += 3, dt->type = Empty_land, aliveobjectnum--;
-                    if (dt->type == 13)
-                        playeratk[dp->belong] += 3, dt->type = Empty_land, aliveobjectnum--;
-                    if (dt->type == 14)
-                        blindtimeremain[dp->belong] = 10, dt->type = Empty_land, aliveobjectnum--;
-                    if (dt->type == 15)
-                        playermaxhp[dp->belong] += 10, dt->type = Empty_land, aliveobjectnum--;
-                    if (dt->type == 16)
-                        playermaxhp[dp->belong] += 30, dt->type = Empty_land, aliveobjectnum--;
-                    if (dt->type == 17)
-                        ishavets[dp->belong] = true, dt->type = Empty_land, aliveobjectnum--;
-                    if (dt->type == 18)
-                        playerfh[dp->belong]++, dt->type = Empty_land, aliveobjectnum--;
-                    if (dt->type == 19)
-                        playerfh[dp->belong] += 3, dt->type = Empty_land, aliveobjectnum--;
-                    if (dt->type == Send)
-                        isHaveSend[dp->belong] = true, dt->type = Empty_land, aliveobjectnum--;
-                    if (dt->type == Grrenade)
-                        playerGrenade[dp->belong]++, dt->type = Empty_land, aliveobjectnum--;
-                    if (dt->type == 9)
-                    {
-                        if (dt->belong != Inteam[playerid] && !ifgetflag[playerid])
-                        {
-                            ifgetflag[playerid] = dt->belong;
-                            dt->type = Empty_flag;
-                            news[newsr].a = playerid;
-                            news[newsr].b = dt->belong;
-                            news[newsr].opt = 1;
-                            news[newsr].remtime = 50;
-                            newsr++;
-                        }
-                        else if (dt->belong == Inteam[playerid] && selectedx == flg[dt->belong].sx && selectedy + 1 == flg[dt->belong].sy && ifgetflag[playerid])
-                        {
-                            mp[flg[ifgetflag[playerid]].sx][flg[ifgetflag[playerid]].sy].type = Flag, mp[flg[ifgetflag[playerid]].sx][flg[ifgetflag[playerid]].sy].belong = flg[ifgetflag[playerid]].belong;
-                            flagscore[Inteam[playerid]]++;
-                            news[newsr].a = playerid;
-                            news[newsr].opt = 3;
-                            news[newsr].remtime = 50;
-                            newsr++;
-                            ifgetflag[playerid] = 0;
-                        }
-                        return;
-                    }
-                    else if (dt->type == 10)
-                        return;
-                    swap(*dt, *dp);
-                }
-                selectedy++;
-            }
+            updMovement(dp, dt, &selectedy, 1, iskt[selectedx][selectedy + 1]);
         }
         return;
     }
@@ -3047,7 +2733,7 @@ int main()
                 {
                     if (((mp[i][j].type == General || mp[i][j].type == 5) && mapmode != 5 && mapmode != 6 && mapmode != CPoints) || (mp[i][j].type == General && (mapmode == 5 || mapmode == 6 || mapmode == CPoints) && mp[i][j].tmp < playermaxhp[mp[i][j].belong]))
                         mp[i][j].tmp++;
-                    else if (mp[i][j].type == Land && turn % 25 == 0)
+                    else if (mp[i][j].type == Land && turn % 15 == 0)
                         mp[i][j].tmp++;
                     for (int k = 1; k <= gennum; k++)
                         sight[k][i][j] = false;
@@ -3309,7 +2995,7 @@ int main()
             {
                 if (((mp[i][j].type == General || mp[i][j].type == 5) && mapmode != 5 && mapmode != 6 && mapmode != 7) || (mp[i][j].type == General && (mapmode == 5 || mapmode == 6 || mapmode == 7) && mp[i][j].tmp < playermaxhp[mp[i][j].belong]))
                     mp[i][j].tmp++;
-                else if (mp[i][j].type == Land && turn % 25 == 0)
+                else if (mp[i][j].type == Land && turn % 15 == 0)
                     mp[i][j].tmp++;
                 for (int k = 1; k <= gennum; k++)
                     sight[k][i][j] = false;
