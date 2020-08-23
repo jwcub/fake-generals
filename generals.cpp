@@ -2518,17 +2518,6 @@ LONG xx1, yy1, xx2, yy2;
 void mapEditor()
 {
     system("cls");
-    if (X > 15 || Y > 15 || gennum > 8)
-    {
-        printf("暂不支持编辑此类地图\n");
-        convmap();
-        congen();
-        concit();
-        convwall();
-        system("pause");
-        return;
-    }
-    convmap();
     int opt = 0;
     while (1)
     {
@@ -2653,7 +2642,7 @@ int main()
         }
         while (1)
         {
-            printf("选择地图：0 = 自定义地图， 1 = 随机地图， 2 = 空白地图， 3 = 迷宫地图， 4 = 端午地图， 5  = 吃鸡地图， 6 = 夺旗地图， 7 = 占点地图， 8 = 涂色地图，\n9 = 堑壕地图\n");
+            printf("选择地图：1 = 随机地图， 2 = 空白地图， 3 = 迷宫地图， 4 = 端午地图， 5  = 吃鸡地图， 6 = 夺旗地图， 7 = 占点地图， 8 = 涂色地图，\n9 = 堑壕地图\n");
             scanf("%d", &mapmode);
             if (mode == 1 && mapmode == 6)
             {
@@ -2665,7 +2654,7 @@ int main()
                 printf("抱歉，占点地图不支持FFA模式。\n");
                 continue;
             }
-            if (mapmode == 0 || mapmode == 1 || mapmode == 2 || mapmode == 3 || mapmode == 4 || mapmode == 5 || mapmode == 6 || mapmode == 7 || mapmode == 8 || mapmode == 9)
+            if (mapmode == 1 || mapmode == 2 || mapmode == 3 || mapmode == 4 || mapmode == 5 || mapmode == 6 || mapmode == 7 || mapmode == 8 || mapmode == 9)
                 break;
         }
         int ifown;
@@ -2766,10 +2755,30 @@ int main()
             mapmode = Blank;
             congen();
         }
-        else if (mapmode == Diy)
+        if (mode == Tdm)
+            teaming();
+        if (mapmode == 6)
         {
-            mapEditor();
+            ifcanconvobject = true;
+            for (int i = 1; i <= teamnum; i++)
+            {
+                flg[i].belong = i;
+                flg[i].conv();
+            }
         }
+    }
+    if (X <= 15 && Y <= 15 && gennum <= 8)
+    {
+        int isDiy;
+        while (1)
+        {
+            printf("是否进入地图编辑器？(1 = 是, 0 = 否）\n");
+            scanf("%d", &isDiy);
+            if (isDiy == 1 || isDiy == 0)
+                break;
+        }
+        if (isDiy)
+            mapEditor();
     }
     memset(sight, 0, sizeof(sight));
     int keys[5] = {'W', 'S', 'A', 'D', 'Z'};
@@ -3188,16 +3197,6 @@ int main()
                 savereplay();
         }
         return 0;
-    }
-    teaming();
-    if (mapmode == 6)
-    {
-        ifcanconvobject = true;
-        for (int i = 1; i <= teamnum; i++)
-        {
-            flg[i].belong = i;
-            flg[i].conv();
-        }
     }
     if (mapmode == 7)
         ifcanconvobject = true;
