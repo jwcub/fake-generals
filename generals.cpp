@@ -1846,15 +1846,53 @@ struct Player
             moveright();
         return;
     }
+    bool isOutside(int x, int y)
+    {
+        for (int i = 0; i < 4; i++)
+        {
+            int px = x + dir[i][0], py = y + dir[i][1];
+            if (px >= 1 && px <= X && py >= 1 && py <= Y && mp[px][py].belong != playerid)
+                return true;
+        }
+        return false;
+    }
     void changetarget()
     {
-        int ansx = sx, ansy = sy, anss = mp[sx][sy].tmp;
+        int insideAnsTmp = mp[sx][sy].tmp, insideAnsX = sy, insideAnsY = sy;
+        int outsideAnsTmp = 0, outsideAnsX = 0, outsideAnsY = 0;
         for (int i = 1; i <= X; i++)
             for (int j = 1; j <= Y; j++)
-                if (mp[i][j].belong == playerid && mp[i][j].tmp > anss && (mp[i][j].type == General || mp[i][j].type == Land || mp[i][j].type == 5))
-                    anss = mp[i][j].tmp, ansx = i, ansy = j;
-        sx = ansx;
-        sy = ansy;
+                if (mp[i][j].belong == playerid)
+                {
+                    if (isOutside(i, j))
+                    {
+                        if (mp[i][j].tmp > outsideAnsTmp)
+                        {
+                            outsideAnsTmp = mp[i][j].tmp;
+                            outsideAnsX = i;
+                            outsideAnsY = j;
+                        }
+                    }
+                    else
+                    {
+                        if (mp[i][j].tmp > insideAnsTmp)
+                        {
+                            insideAnsTmp = mp[i][j].tmp;
+                            insideAnsX = i;
+                            insideAnsY = j;
+                        }
+                    }
+                }
+        if (outsideAnsTmp * 5 >= insideAnsTmp) //优先选外面的
+        {
+            sx = outsideAnsX;
+            sy = outsideAnsY;
+        }
+        else
+        {
+            sx = insideAnsX;
+            sy = insideAnsY;
+        }
         selectedx = sx;
         selectedy = sy;
         q.push(make_pair(sx, sy));
@@ -1865,15 +1903,23 @@ struct Player
     }
     void botmove()
     {
-        if (q.empty())
+        int x = 0, y = 0, tryTime = 0;
+        do
         {
-            selectedx = sx, selectedy = sy;
-            changetarget();
-        }
-        int x = q.front().first, y = q.front().second;
-        q.pop();
+            if (q.empty())
+            {
+                changetarget();
+            }
+            x = q.front().first, y = q.front().second;
+            tryTime++;
+            q.pop();
+        } while (mp[x][y].tmp <= 1 && mp[x][y].type != General && tryTime <= 10);
+        if (tryTime > 10)
+            return;
         if (isGMode)
             playerGrenade[playerid] = 1;
+        if (mp[x][y].tmp <= 1)
+            return;
         int tmp = (isGMode ? 10 : 7);
         if (playerGrenade[playerid] > 0)
         {
@@ -1893,24 +1939,55 @@ struct Player
                         }
                     }
         }
-        for (int i = rand() % 4; rand() % 10 != 0; i = rand() % 4)
+        int ansTmp = 0, ansI = -1;
+        vector<int> tmpI;
+        tmpI.push_back(0);
+        tmpI.push_back(1);
+        tmpI.push_back(2);
+        tmpI.push_back(3);
+        random_shuffle(tmpI.begin(), tmpI.end());
+        for (vector<int>::iterator it = tmpI.begin(); it != tmpI.end();)
         {
+            int i = *it;
+            it = tmpI.erase(it);
             int px = x + dir[i][0], py = y + dir[i][1];
-            if (px >= 1 && px <= X && py >= 1 && py <= Y && mp[px][py].type != Wall && mp[x][y].tmp > 1 && !flag[px][py] && !fog[px][py] && mp[px][py].type != 20)
+            if (px >= 1 && px <= X && py >= 1 && py <= Y && mp[px][py].type != Wall && mp[x][y].tmp > 1 && !flag[px][py] && !fog[px][py] && mp[px][py].type != 20 && (mp[px][py].type != Empty_city || mp[px][py].type == Empty_city && mp[x][y].tmp > mp[px][py].tmp))
             {
-                flag[px][py] = true;
-                q.push(make_pair(px, py));
-                if (i == 0)
-                    moveup();
-                else if (i == 1)
-                    moveright();
-                else if (i == 2)
-                    movedown();
+                // break;
+                int currentTmp; //攻击优先级
+                if (mp[px][py].belong != playerid)
+                {
+                    if (mp[px][py].type == General)
+                        currentTmp = 10;
+                    else if (mp[px][py].type == City)
+                        currentTmp = 8;
+                    else if (mp[px][py].type == Land)
+                        currentTmp = 5;
+                    else
+                        currentTmp = 3;
+                }
                 else
-                    moveleft();
-                break;
+                    currentTmp = 1;
+                if (currentTmp > ansTmp)
+                {
+                    ansTmp = currentTmp;
+                    ansI = i;
+                }
             }
         }
+        if (ansI == -1)
+            return;
+        int px = x + dir[ansI][0], py = y + dir[ansI][1];
+        flag[px][py] = true;
+        q.push(make_pair(px, py));
+        if (ansI == 0)
+            moveup();
+        else if (ansI == 1)
+            moveright();
+        else if (ansI == 2)
+            movedown();
+        else
+            moveleft();
         return;
     }
 } player[105];
@@ -2716,7 +2793,9 @@ int main()
             }
             if (inp == 'Z')
                 player[currentplayer].halfselect ^= 1;
-            else if (inp == 'F')
+            else
+                player[currentplayer].playermove(inp);
+            if (KEY_DOWN('F'))
             {
                 while (1)
                 {
@@ -2734,8 +2813,6 @@ int main()
                         break;
                 }
             }
-            else
-                player[currentplayer].playermove(inp);
             for (int i = 1; i <= gennum; i++)
                 if (player[i].isbot)
                     player[i].botmove();
