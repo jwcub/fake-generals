@@ -3127,6 +3127,10 @@ int main()
             if (miniMapLevel < 9)
                 miniMapLevel++;
         }
+        if (KEY_DOWN('C'))
+        {
+            commandLine();
+        }
         if (miniMapOpt == 1)
             isMiniMap = true;
         else if (miniMapOpt == 2)
