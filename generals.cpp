@@ -574,7 +574,8 @@ void Setcolor(int ForeColor = 15, int BackGroundColor = 0)
     SetConsoleTextAttribute(hCon, ForeColor | BackGroundColor);
     return;
 }
-int cls[11] = {11, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10};
+int cls[13] = {13, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
+int clsNum = 13;
 int foglevel;
 struct News
 {
@@ -585,13 +586,13 @@ void printPlayer(int id, bool isTeam = true)
 {
     if (isTeam)
     {
-        SetColor(cls[Inteam[id] % 11], 0, 100);
+        SetColor(cls[Inteam[id] % clsNum], 0, 100);
         printf("player%d", id);
         Setcolor();
     }
     else
     {
-        SetColor(cls[id % 11], 0, 100);
+        SetColor(cls[id % clsNum], 0, 100);
         printf("player%d", id);
         Setcolor();
     }
@@ -599,7 +600,7 @@ void printPlayer(int id, bool isTeam = true)
 }
 void printTeam(int id)
 {
-    SetColor(cls[id % 11], 0, 100);
+    SetColor(cls[id % clsNum], 0, 100);
     printf("team%d", id);
     Setcolor();
     return;
@@ -726,12 +727,12 @@ void printCurrentMiniMap(int bgmp, int id)
         else if (sm[bgmp][j] == 100)
         {
             if ((mapmode == CFlag || mapmode == CPoints) || (mapmode == Pubg && fvf))
-                SetColor(cls[Inteam[id] % 11], 0, 1);
+                SetColor(cls[Inteam[id] % clsNum], 0, 1);
             else
-                SetColor(cls[id % 11], 0, 1);
+                SetColor(cls[id % clsNum], 0, 1);
         }
         else if (sm[bgmp][j] == 19)
-            SetColor(cls[id % 11], 0, 1);
+            SetColor(cls[id % clsNum], 0, 1);
         else if (sm[bgmp][j] == -2)
             Setcolor();
         else if (sm[bgmp][j] == -1)
@@ -791,7 +792,7 @@ void putmap(int sx, int sy, int id)
                     if (currentBlock != '!')
                     {
                         if (mp[i][j].belong)
-                            currentSM = mp[i][j].belong % 11;
+                            currentSM = mp[i][j].belong % clsNum;
                         currentBlock = '+';
                     }
                 }
@@ -799,7 +800,7 @@ void putmap(int sx, int sy, int id)
                 {
                     if (currentBlock != '!')
                     {
-                        currentSM = ifgetflag[mp[i][j].belong] % 11;
+                        currentSM = ifgetflag[mp[i][j].belong] % clsNum;
                         currentBlock = '+';
                     }
                 }
@@ -809,9 +810,9 @@ void putmap(int sx, int sy, int id)
                     {
                         currentBlock = 'X';
                         // if ((mapmode == CFlag || mapmode == CPoints) || (mapmode == Pubg && fvf))
-                        //     currentSM = Inteam[mp[i][j].belong] % 11;
+                        //     currentSM = Inteam[mp[i][j].belong] % clsNum;
                         // else
-                        //     currentSM = mp[i][j].belong % 11;
+                        //     currentSM = mp[i][j].belong % clsNum;
                         currentSM = max(currentSM, 100);
                     }
                 }
@@ -826,9 +827,9 @@ void putmap(int sx, int sy, int id)
                         if (mp[i][j].belong == id)
                             currentSM = max(currentSM, 100);
                         if ((mapmode == CFlag || mapmode == CPoints) || (mapmode == Pubg && fvf))
-                            currentSM = max(currentSM, Inteam[mp[i][j].belong] % 11);
+                            currentSM = max(currentSM, Inteam[mp[i][j].belong] % clsNum);
                         else
-                            currentSM = max(currentSM, mp[i][j].belong % 11);
+                            currentSM = max(currentSM, mp[i][j].belong % clsNum);
                     }
                 }
                 if (i == sx && j == sy && sx != 0 && sy != 0)
@@ -952,10 +953,10 @@ void putmap(int sx, int sy, int id)
             if (isGrenade[i][j])
             {
                 if ((mapmode == 7 || mapmode == 6) && mode == Tdm || mapmode == Pubg && fvf)
-                    SetColor(cls[Inteam[isGrenade[i][j]] % 11], 0, 100);
+                    SetColor(cls[Inteam[isGrenade[i][j]] % clsNum], 0, 100);
                 else
                 {
-                    SetColor(cls[isGrenade[i][j] % 11], 0, 100);
+                    SetColor(cls[isGrenade[i][j] % clsNum], 0, 100);
                 }
                 printf("<G> ");
                 Setcolor();
@@ -987,7 +988,7 @@ void putmap(int sx, int sy, int id)
                         else
                         {
                             if ((mapmode == 7 || mapmode == 6) && mode == Tdm || mapmode == Pubg && fvf)
-                                SetColor(cls[Inteam[mp[i][j].belong] % 11], 0, 100);
+                                SetColor(cls[Inteam[mp[i][j].belong] % clsNum], 0, 100);
                             printf("{");
                             getnum(mp[i][j].tmp);
                             printf("}");
@@ -1082,7 +1083,7 @@ void putmap(int sx, int sy, int id)
                     {
                         if (ifgetflag[mp[i][j].belong])
                         {
-                            SetColor(cls[Inteam[mp[i][j].belong] % 11], 0, 100);
+                            SetColor(cls[Inteam[mp[i][j].belong] % clsNum], 0, 100);
                             printf("<");
                             getnum(mp[i][j].tmp);
                             printf(">");
@@ -1090,9 +1091,9 @@ void putmap(int sx, int sy, int id)
                         }
                         else if (sight[id][i][j])
                         {
-                            SetColor(cls[mp[i][j].belong % 11], 0, 1);
+                            SetColor(cls[mp[i][j].belong % clsNum], 0, 1);
                             if ((mapmode == CFlag || mapmode == CPoints) && mode == Tdm || mapmode == Pubg && fvf)
-                                SetColor(cls[Inteam[mp[i][j].belong] % 11], 0, 100);
+                                SetColor(cls[Inteam[mp[i][j].belong] % clsNum], 0, 100);
                             printf("{");
                             getnum(mp[i][j].tmp);
                             printf("}");
@@ -1116,7 +1117,7 @@ void putmap(int sx, int sy, int id)
                     {
                         if (sight[id][i][j])
                         {
-                            SetColor(cls[mp[i][j].belong % 11], 0, 1);
+                            SetColor(cls[mp[i][j].belong % clsNum], 0, 1);
                             printf(" ");
                             getnum(mp[i][j].tmp);
                             printf(" ");
@@ -1151,7 +1152,7 @@ void putmap(int sx, int sy, int id)
                     {
                         if (sight[id][i][j])
                         {
-                            SetColor(cls[mp[i][j].belong % 11], 0, 1);
+                            SetColor(cls[mp[i][j].belong % clsNum], 0, 1);
                             printf("[");
                             getnum(mp[i][j].tmp);
                             printf("]");
@@ -1347,7 +1348,7 @@ void putmap(int sx, int sy, int id)
                     else if (mp[i][j].type == 20)
                     {
                         if (mp[i][j].belong)
-                            SetColor(cls[mp[i][j].belong % 11], 0, 100);
+                            SetColor(cls[mp[i][j].belong % clsNum], 0, 100);
                         printf("[");
                         getnum(mp[i][j].tmp);
                         printf("]");
@@ -1495,7 +1496,7 @@ void putmap(int sx, int sy, int id)
         for (int i = 1, j = 1; i <= gennum && j <= 5; i++)
             if (visplayer[score[i].id])
             {
-                SetColor(cls[score[i].id % 11], 0, 1);
+                SetColor(cls[score[i].id % clsNum], 0, 1);
                 printf("player%d    team%d\n", score[i].id, Inteam[score[i].id]);
                 Setcolor();
                 j++;
@@ -1509,7 +1510,7 @@ void putmap(int sx, int sy, int id)
         {
             for (int i = 1; i <= teamnum; i++)
             {
-                SetColor(cls[score[i].id % 11], 0, 1);
+                SetColor(cls[score[i].id % clsNum], 0, 1);
                 printf("team%d    %d %d\n", score[i].id, score[i].sco, score[i].lnd);
                 Setcolor();
             }
@@ -1521,7 +1522,7 @@ void putmap(int sx, int sy, int id)
             {
                 if (!fvf)
                 {
-                    SetColor(cls[score[i].id % 11], 0, 1);
+                    SetColor(cls[score[i].id % clsNum], 0, 1);
                     printf("player%d    %d %d", score[i].id, score[i].sco, score[i].lnd);
                     if (mode == 2)
                         printf("    team%d", Inteam[score[i].id]);
@@ -1554,7 +1555,7 @@ void putmap(int sx, int sy, int id)
         sort(nflagscore + 1, nflagscore + teamnum + 1, cmpteam);
         for (int i = 1; i <= teamnum; i++)
         {
-            SetColor(cls[nflagscore[i].pos % 11], 0, 1);
+            SetColor(cls[nflagscore[i].pos % clsNum], 0, 1);
             printf("team%d    %d\n", nflagscore[i].pos, nflagscore[i].score);
             Setcolor();
         }
