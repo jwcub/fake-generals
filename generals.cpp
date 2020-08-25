@@ -134,6 +134,8 @@ int isreplay;
 bool isPaint;
 int paintRemainTime;
 bool isHaveSend[105];
+int turn = 1;
+int currentplayer = 1;
 int randnum(int l, int r)
 {
     return rand() % (r - l + 1) + l;
@@ -169,6 +171,13 @@ string myto_string(int x)
     sst << x;
     string ans;
     sst >> ans;
+    return ans;
+}
+int myto_int(string s)
+{
+    int ans = 0;
+    for (int i = 0; i < s.size(); i++)
+        ans = ans * 10 + (s[i] - '0');
     return ans;
 }
 int order[105];
@@ -2208,6 +2217,18 @@ void saveconfig()
     return;
 }
 bool isfirstsave = true;
+void flushOpt()
+{
+    char c;
+    while (1)
+    {
+        cin >> c;
+        c = toupper(c);
+        if (c != 'A' && c != 'S' && c != 'W' && c != 'D' && c != 'F' && c != 'Q' && c != 'E')
+            break;
+    }
+    return;
+}
 void savemap()
 {
     ofstream outfile;
@@ -2344,6 +2365,62 @@ void mapEditor()
         }
         Sleep(300);
     }
+    return;
+}
+void commandLine()
+{
+    flushOpt();
+    string cmd;
+    string tmp[100];
+    int tot;
+    while (1)
+    {
+        tot = 1;
+        for (int i = 0; i < 100; i++)
+            tmp[i] = "";
+        cout << ">>> ";
+        getline(cin, cmd);
+        for (int i = 0; i < cmd.size(); i++)
+            if (cmd[i] == ' ' && (i == 0 || cmd[i - 1] != ' '))
+                tot++;
+            else if (cmd[i] != ' ')
+            {
+                tmp[tot] += cmd[i];
+            }
+        if (tmp[1] == "exit()")
+            break;
+        else if (tmp[1] == "changecurrent")
+        {
+            if (tot != 2)
+                cout << "SyntaxError";
+            else if (myto_int(tmp[2]) < 1 || myto_int(tmp[2]) > gennum)
+                cout << "ValueError";
+            else
+                currentplayer = myto_int(tmp[2]);
+        }
+        else if (tmp[1] == "makeselect")
+        {
+            if (tot != 3)
+                cout << "SyntaxError";
+            else
+            {
+                int px = myto_int(tmp[2]), py = myto_int(tmp[3]);
+                if (px >= 1 && px <= X && py >= 1 && py <= Y && mp[px][py].belong == currentplayer)
+                {
+                    player[currentplayer].selectedx = px;
+                    player[currentplayer].selectedy = py;
+                }
+                else
+                    cout << "ValueError";
+            }
+        }
+        else
+        {
+            cout << "Undefined";
+        }
+        cout << endl;
+    }
+    system("cls");
     return;
 }
 int main()
@@ -2547,8 +2624,6 @@ int main()
     }
     memset(sight, 0, sizeof(sight));
     int keys[5] = {'W', 'S', 'A', 'D', 'Z'};
-    int turn = 1;
-    int currentplayer = 1;
     objectnum = int(double(X * Y) * objectpr);
     alivegennum = gennum, aliveteamnum = teamnum;
     if (isreplay == 1)
@@ -2782,6 +2857,10 @@ int main()
             {
                 if (miniMapLevel < 9)
                     miniMapLevel++;
+            }
+            if (KEY_DOWN('C'))
+            {
+                commandLine();
             }
             if (miniMapOpt == 1)
                 isMiniMap = true;
