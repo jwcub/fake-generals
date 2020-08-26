@@ -2312,73 +2312,6 @@ int miniMapOpt;
 POINT p1, p2;
 double dx, dy;
 LONG xx1, yy1, xx2, yy2;
-void mapEditor()
-{
-    system("cls");
-    int opt = 0;
-    int slx = 0, sly = 0;
-    if (X > 15 || Y > 15)
-    {
-        slx = (X >> 1), sly = (Y >> 1);
-    }
-    while (1)
-    {
-        for (int i = 1; i <= X; i++)
-            for (int j = 1; j <= Y; j++)
-                sight[0][i][j] = true;
-        putmap(slx, sly, 0);
-        if (opt == 0)
-            printf("修改类型\n");
-        else if (opt == 1)
-            printf("修改颜色\n");
-        else if (opt == 2)
-        {
-            printf("修改兵力\n");
-        }
-        else if (opt == 3)
-        {
-            printf("选择\n");
-        }
-        if (KEY_DOWN('F'))
-            opt = (opt + 1) % 4;
-        if (KEY_DOWN('E'))
-            break;
-        if (KEY_DOWN(MOUSE_MOVED))
-        {
-            GetCursorPos(&p1);
-            int sp = int(round((double(p1.y) - double(xx1)) / dx)) + 1 + (X > 15 ? slx - 8 : 0);
-            int sq = int(round((double(p1.x) - double(yy1)) / dy)) + 1 + (Y > 15 ? sly - 8 : 0);
-            if (opt == 0)
-            {
-                int tmp;
-                printf("输入修改后的类型...");
-                cin >> tmp;
-                mp[sp][sq].type = (land_type)tmp;
-            }
-            else if (opt == 1)
-            {
-                int tmp;
-                printf("输入修改后的颜色...");
-                cin >> tmp;
-                mp[sp][sq].belong = tmp;
-            }
-            else if (opt == 2)
-            {
-                int tmp;
-                printf("输入修改后的兵力...");
-                cin >> tmp;
-                mp[sp][sq].tmp = tmp;
-            }
-            else if (opt == 3)
-            {
-                slx = sp;
-                sly = sq;
-            }
-        }
-        Sleep(300);
-    }
-    return;
-}
 int getRandomAlivePlayer()
 {
     vector<int> vt;
@@ -2603,6 +2536,75 @@ void commandLine()
         cout << endl;
     }
     system("cls");
+    return;
+}
+void mapEditor()
+{
+    system("cls");
+    int opt = 0;
+    int slx = 0, sly = 0;
+    if (X > 15 || Y > 15)
+    {
+        slx = (X >> 1), sly = (Y >> 1);
+    }
+    while (1)
+    {
+        for (int i = 1; i <= X; i++)
+            for (int j = 1; j <= Y; j++)
+                sight[0][i][j] = true;
+        putmap(slx, sly, 0);
+        if (opt == 0)
+            printf("修改类型\n");
+        else if (opt == 1)
+            printf("修改颜色\n");
+        else if (opt == 2)
+        {
+            printf("修改兵力\n");
+        }
+        else if (opt == 3)
+        {
+            printf("选择\n");
+        }
+        if (KEY_DOWN('F'))
+            opt = (opt + 1) % 4;
+        if (KEY_DOWN('E'))
+            break;
+        if (KEY_DOWN(MOUSE_MOVED))
+        {
+            GetCursorPos(&p1);
+            int sp = int(round((double(p1.y) - double(xx1)) / dx)) + 1 + (X > 15 ? slx - 8 : 0);
+            int sq = int(round((double(p1.x) - double(yy1)) / dy)) + 1 + (Y > 15 ? sly - 8 : 0);
+            if (opt == 0)
+            {
+                int tmp;
+                printf("输入修改后的类型...");
+                cin >> tmp;
+                mp[sp][sq].type = (land_type)tmp;
+            }
+            else if (opt == 1)
+            {
+                int tmp;
+                printf("输入修改后的颜色...");
+                cin >> tmp;
+                mp[sp][sq].belong = tmp;
+            }
+            else if (opt == 2)
+            {
+                int tmp;
+                printf("输入修改后的兵力...");
+                cin >> tmp;
+                mp[sp][sq].tmp = tmp;
+            }
+            else if (opt == 3)
+            {
+                slx = sp;
+                sly = sq;
+            }
+        }
+        if (KEY_DOWN('C'))
+            commandLine();
+        Sleep(300);
+    }
     return;
 }
 int main()
