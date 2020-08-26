@@ -2529,6 +2529,11 @@ void commandLine()
             else
                 swap(mp[xx1][yy1], mp[xx2][yy2]);
         }
+        else if (tmp[1] == "clear")
+        {
+            system("cls");
+            putmap(player[currentplayer].selectedx, player[currentplayer].selectedy, currentplayer);
+        }
         else
         {
             cout << "Undefined";
@@ -2542,17 +2547,18 @@ void mapEditor()
 {
     system("cls");
     int opt = 0;
-    int slx = 0, sly = 0;
+    currentplayer = 0;
+    player[currentplayer].selectedx = 0, player[currentplayer].selectedy = 0;
     if (X > 15 || Y > 15)
     {
-        slx = (X >> 1), sly = (Y >> 1);
+        player[currentplayer].selectedx = (X >> 1), player[currentplayer].selectedy = (Y >> 1);
     }
     while (1)
     {
         for (int i = 1; i <= X; i++)
             for (int j = 1; j <= Y; j++)
                 sight[0][i][j] = true;
-        putmap(slx, sly, 0);
+        putmap(player[currentplayer].selectedx, player[currentplayer].selectedy, 0);
         if (opt == 0)
             printf("修改类型\n");
         else if (opt == 1)
@@ -2572,8 +2578,8 @@ void mapEditor()
         if (KEY_DOWN(MOUSE_MOVED))
         {
             GetCursorPos(&p1);
-            int sp = int(round((double(p1.y) - double(xx1)) / dx)) + 1 + (X > 15 ? slx - 8 : 0);
-            int sq = int(round((double(p1.x) - double(yy1)) / dy)) + 1 + (Y > 15 ? sly - 8 : 0);
+            int sp = int(round((double(p1.y) - double(xx1)) / dx)) + 1 + (X > 15 ? player[currentplayer].selectedx - 8 : 0);
+            int sq = int(round((double(p1.x) - double(yy1)) / dy)) + 1 + (Y > 15 ? player[currentplayer].selectedy - 8 : 0);
             if (opt == 0)
             {
                 int tmp;
@@ -2597,8 +2603,8 @@ void mapEditor()
             }
             else if (opt == 3)
             {
-                slx = sp;
-                sly = sq;
+                player[currentplayer].selectedx = sp;
+                player[currentplayer].selectedy = sq;
             }
         }
         if (KEY_DOWN('C'))
