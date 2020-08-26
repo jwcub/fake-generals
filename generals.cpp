@@ -1615,6 +1615,14 @@ struct Flg
         return;
     }
 } flg[105];
+void getObject(int frm, int t)
+{
+    playerac[t] += playerac[frm];
+    playeratk[t] += playeratk[frm];
+    playerfh[t] += playerfh[frm];
+    ishavets[t] |= ishavets[frm];
+    return;
+}
 struct Player
 {
     int selectedx, selectedy, playerid;
@@ -1746,9 +1754,9 @@ struct Player
                 dp->tmp -= dmg2;
                 dt->tmp -= dmg1;
                 if (dp->tmp <= 0 && mapmode != 6 && mapmode != 7)
-                    dp->type = Empty_land, dp->tmp = 0, dp->belong = 0, alivegennum--, playeratk[dt->belong] += playeratk[dp->belong], playerac[dt->belong] += playerac[dp->belong], ishavets[dt->belong] |= ishavets[dp->belong], playerfh[dt->belong] += playerfh[dp->belong], playerGrenade[dt->belong] += playerGrenade[dp->belong];
+                    dp->type = Empty_land, dp->tmp = 0, dp->belong = 0, alivegennum--, getObject(dp->belong, dt->belong);
                 if (dt->tmp <= 0 && mapmode != 6 && mapmode != 7)
-                    dt->type = Empty_land, dt->tmp = 0, dt->belong = 0, alivegennum--, playeratk[dp->belong] += playeratk[dt->belong], playerac[dp->belong] += playerac[dt->belong], ishavets[dp->belong] |= ishavets[dt->belong], playerfh[dp->belong] += playerfh[dt->belong], playerGrenade[dp->belong] += playerGrenade[dt->belong];
+                    dt->type = Empty_land, dt->tmp = 0, dt->belong = 0, alivegennum--, getObject(dt->belong, dp->belong);
             }
             else
             {
@@ -2371,6 +2379,23 @@ void mapEditor()
     }
     return;
 }
+int getRandomAlivePlayer()
+{
+    vector<int> vt;
+    for (int i = 1; i <= X; i++)
+        for (int j = 1; j <= Y; j++)
+            if (mp[i][j].type == General && mp[i][j].belong > 0 && mp[i][j].tmp > 0)
+                vt.push_back(mp[i][j].belong);
+    return vt[randnum(0, vt.size() - 1)];   
+}
+bool isAlive(int id)
+{
+    for (int i = 1; i <= X; i++)
+        for (int j = 1; j <= Y; j++)
+            if (mp[i][j].tmp > 0 && mp[i][j].belong == id)
+                return true;
+    return false;
+}
 void commandLine()
 {
     flushOpt();
@@ -2399,12 +2424,7 @@ void commandLine()
                 cout << "SyntaxError";
             else if (myto_int(tmp[2]) == 0)
             {
-                vector<int> vt;
-                for (int i = 1; i <= X; i++)
-                    for (int j = 1; j <= Y; j++)
-                        if (mp[i][j].type == General && mp[i][j].belong > 0 && mp[i][j].tmp > 0)
-                            vt.push_back(mp[i][j].belong);
-                currentplayer = vt[randnum(0, vt.size() - 1)];     
+                  currentplayer = getRandomAlivePlayer();
             }
             else if (myto_int(tmp[2]) < 1 || myto_int(tmp[2]) > gennum)
                 cout << "ValueError";
@@ -2472,6 +2492,82 @@ void commandLine()
                 }
                 else
                     cout << "ValueError";
+            }
+        }
+        else if (tmp[1] == "kill")
+        {
+            if (tot != 2 && tot != 3)
+                cout << "SyntaxError";
+            else
+            {
+                int a, b;
+                a = myto_int(tmp[2]);
+                if (a == 0)
+                    a = getRandomAlivePlayer();
+                else if (a < 1 || a > gennum || !isAlive(a))
+                    cout << "ValueError";
+                if (tot == 2)
+                {
+                    for (int i = 1; i <= X; i++)
+                            for (int j = 1; j <= Y; j++)
+                                if (mp[i][j].belong == a)
+                                {
+                                    if (mapmode == CFlag || mapmode == CPoints)
+                                        mp[i][j].tmp = -10;
+                                    else
+                                        mp[i][j].tozero();
+                                }        
+                    if (mapmode != CFlag && mapmode != CPoints)
+                        alivegennum--;
+                }
+                else if (tot == 3)
+                {
+                    b = myto_int(tmp[3]);
+                    if (b == 0)
+                        b = getRandomAlivePlayer();
+                    else if (b < 1 || b > gennum || a == b || !isAlive(b))
+                        cout << "ValueError";
+                    else
+                    {
+                        if (mapmode == CPoints || mapmode == CFlag)
+                        {
+                            for (int i = 1; i <= X; i++)
+                                for (int j = 1; j <= Y; j++)
+                                    if (mp[i][j].belong == a)
+                                    {
+                                        mp[i][j].tmp = -10;
+                                        i = X + 1;
+                                        break;
+                                    }
+                        }
+                        else
+                        {
+                            if (mapmode != Pubg)
+                            {
+                                for (int i = 1; i <= X; i++)
+                                    for (int j = 1; j <= Y; j++)
+                                        if (mp[i][j].belong == a && mp[i][j].type == General)
+                                        {
+                                            mp[i][j].type = City;
+                                            i = X + 1;
+                                            break;
+                                        }
+                                player[b].kil(a);
+                            }
+                            else
+                            {
+                                for (int i = 1; i <= X; i++)
+                                    for (int j = 1; j <= Y; j++)
+                                        if (mp[i][j].belong == a)
+                                        {
+                                            mp[i][j].tozero();
+                                        }  
+                            }
+                        }
+                        if (mapmode == Pubg)
+                            getObject(a, b);
+                    }
+                }
             }
         }
         else
