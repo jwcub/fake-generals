@@ -2570,6 +2570,32 @@ void commandLine()
                 }
             }
         }
+        else if (tmp[1] == "swapland")
+        {
+            if (tot != 5)
+                cout << "SyntaxError";
+            int xx1, yy1, xx2, yy2;
+            if (tmp[2] == "~")
+                xx1 = player[currentplayer].selectedx;
+            else
+                xx1 = myto_int(tmp[2]);
+            if (tmp[3] == "~")
+                yy1 = player[currentplayer].selectedy;
+            else
+                yy1 = myto_int(tmp[3]);
+            if (tmp[4] == "~")
+                xx2 = player[currentplayer].selectedx;
+            else
+                xx2 = myto_int(tmp[4]);
+            if (tmp[5] == "~")
+                yy2 = player[currentplayer].selectedy;
+            else
+                yy2 = myto_int(tmp[5]);
+            if (xx1 < 1 || xx1 > X || yy1 < 1 || yy1 > Y || xx2 < 1 || xx2 > X || yy2 < 1 || yy2 > Y)
+                cout << "ValueError";
+            else
+                swap(mp[xx1][yy1], mp[xx2][yy2]);
+        }
         else
         {
             cout << "Undefined";
