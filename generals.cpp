@@ -176,9 +176,13 @@ string myto_string(int x)
 int myto_int(string s)
 {
     int ans = 0;
+    int flag = 1;
     for (int i = 0; i < s.size(); i++)
-        ans = ans * 10 + (s[i] - '0');
-    return ans;
+        if (s[i] == '-')
+            flag *= -1;
+        else if (isdigit(s[i]))
+            ans = ans * 10 + (s[i] - '0');
+    return ans * flag;
 }
 int order[105];
 int dist(int xx1, int yy1, int xx2, int yy2)
@@ -2393,6 +2397,15 @@ void commandLine()
         {
             if (tot != 2)
                 cout << "SyntaxError";
+            else if (myto_int(tmp[2]) == 0)
+            {
+                vector<int> vt;
+                for (int i = 1; i <= X; i++)
+                    for (int j = 1; j <= Y; j++)
+                        if (mp[i][j].type == General && mp[i][j].belong > 0 && mp[i][j].tmp > 0)
+                            vt.push_back(mp[i][j].belong);
+                currentplayer = vt[randnum(0, vt.size() - 1)];     
+            }
             else if (myto_int(tmp[2]) < 1 || myto_int(tmp[2]) > gennum)
                 cout << "ValueError";
             else
@@ -2404,11 +2417,58 @@ void commandLine()
                 cout << "SyntaxError";
             else
             {
-                int px = myto_int(tmp[2]), py = myto_int(tmp[3]);
+                int px, py;
+                if (tmp[2] == "~")
+                    px = player[currentplayer].selectedx;
+                else
+                {
+                    px = myto_int(tmp[2]);
+                }
+                if (tmp[3] == "~")
+                    py = player[currentplayer].selectedy;
+                else
+                {
+                    py = myto_int(tmp[3]);
+                }
                 if (px >= 1 && px <= X && py >= 1 && py <= Y && mp[px][py].belong == currentplayer)
                 {
                     player[currentplayer].selectedx = px;
                     player[currentplayer].selectedy = py;
+                }
+                else
+                    cout << "ValueError";
+            }
+        }
+        else if (tmp[1] == "setbelong" || tmp[1] == "settype" || tmp[1] == "settmp")
+        {
+            if (tot != 4)
+                cout << "SyntaxError";
+            else
+            {
+                int px, py, k;
+                if (tmp[2] == "~")
+                    px = player[currentplayer].selectedx;
+                else
+                {
+                    px = myto_int(tmp[2]);
+                }
+                if (tmp[3] == "~")
+                    py = player[currentplayer].selectedy;
+                else
+                {
+                    py = myto_int(tmp[3]);
+                }
+                k = myto_int(tmp[4]);
+                if (px >= 1 && px <= X && py >= 1 && py <= Y)
+                {
+                    if (tmp[1] == "setbelong" && k >= 1 && k <= gennum)
+                        mp[px][py].belong = k;
+                    else if (tmp[1] == "settype")
+                        mp[px][py].type = (land_type)k;
+                    else if (tmp[1] == "settmp" && k >= 0)
+                        mp[px][py].tmp = k;
+                    else
+                        cout << "ValueError";
                 }
                 else
                     cout << "ValueError";
