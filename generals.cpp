@@ -1800,7 +1800,7 @@ struct Player
                         news[newsr].remtime = 50;
                         newsr++;
                     }
-                    else if (dt->belong == Inteam[playerid] && selectedx - 1 == flg[dt->belong].sx && selectedy == flg[dt->belong].sy && ifgetflag[playerid])
+                    else if (dt->belong == Inteam[playerid] && ifgetflag[playerid])
                     {
                         mp[flg[ifgetflag[playerid]].sx][flg[ifgetflag[playerid]].sy].type = Flag, mp[flg[ifgetflag[playerid]].sx][flg[ifgetflag[playerid]].sy].belong = flg[ifgetflag[playerid]].belong;
                         flagscore[Inteam[playerid]]++;
