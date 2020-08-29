@@ -2414,8 +2414,12 @@ void commandLine()
                 k = myto_int(tmp[4]);
                 if (px >= 1 && px <= X && py >= 1 && py <= Y)
                 {
-                    if (tmp[1] == "setbelong" && k >= 1 && k <= gennum)
+                    if (tmp[1] == "setbelong" && k >= 0 && k <= gennum)
+                    {
+                        if (k == 0)
+                            k = getRandomAlivePlayer();
                         mp[px][py].belong = k;
+                    }
                     else if (tmp[1] == "settype")
                         mp[px][py].type = (land_type)k;
                     else if (tmp[1] == "settmp" && k >= 0)
