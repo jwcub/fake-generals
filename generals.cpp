@@ -69,7 +69,8 @@ enum game_mode
     Nil,
     Ffa,
     Tdm,
-    Fvf
+    Fvf,
+    Boss
 };
 enum map_mode
 {
@@ -147,6 +148,8 @@ bool ifcanconvobject;
 bool fvf;
 bool isgz;
 bool opt;
+bool isBoss;
+int bossID;
 void convmap()
 {
     for (int i = 1; i <= X; i++)
@@ -2036,12 +2039,30 @@ struct Team
         return;
     }
 } team[105];
+void addPlayerToTeam(int pid, int tid)
+{
+    player[pid].inteam = tid;
+    ifteam[tid].insert(pid);
+    team[tid].membernum++;
+    Inteam[pid] = tid;
+    team[tid].members[team[tid].membernum] = &player[pid];
+    return;
+}
 void teaming()
 {
     for (int i = 1; i <= teamnum; i++)
     {
         team[i].tozero();
         team[i].teamid = i;
+    }
+    if (isBoss)
+    {
+        bossID = randnum(1, gennum);
+        addPlayerToTeam(bossID, 1);
+        for (int i = 1; i <= gennum; i++)
+            if (i != bossID)
+                addPlayerToTeam(i, 2);
+        return;
     }
     for (int i = 1; i <= gennum; i++)
     {
@@ -2672,9 +2693,9 @@ int main()
     {
         while (1)
         {
-            printf("选择模式：1 = Free For All， 2 = Team Deathmatch，3 = 50v50\n");
+            printf("选择模式：1 = Free For All， 2 = Team Deathmatch， 3 = 50v50， 4 = Boss\n");
             scanf("%d", &mode);
-            if (mode == 1 || mode == 2 || mode == 3)
+            if (mode == 1 || mode == 2 || mode == 3 || mode == 4)
                 break;
         }
         if (mode == 3)
@@ -2689,6 +2710,12 @@ int main()
             objectpr = 0.05;
             kttime = 20;
         }
+        if (mode == Boss)
+        {
+            isBoss = true;
+            mode = Tdm;
+            teamnum = 2;
+        }
         while (1)
         {
             printf("选择地图：1 = 随机地图， 2 = 空白地图， 3 = 迷宫地图， 4 = 端午地图， 5  = 吃鸡地图， 6 = 夺旗地图， 7 = 占点地图， 8 = 涂色地图，\n9 = 堑壕地图\n");
@@ -2701,6 +2728,16 @@ int main()
             if (mode == 1 && mapmode == 7)
             {
                 printf("抱歉，占点地图不支持FFA模式。\n");
+                continue;
+            }
+            if (isBoss && mapmode == 6)
+            {
+                printf("抱歉，夺旗地图不支持Boss模式。\n");
+                continue;
+            }
+            if (isBoss == 1 && mapmode == 7)
+            {
+                printf("抱歉，占点地图不支持Boss模式。\n");
                 continue;
             }
             if (mapmode == 1 || mapmode == 2 || mapmode == 3 || mapmode == 4 || mapmode == 5 || mapmode == 6 || mapmode == 7 || mapmode == 8 || mapmode == 9)
@@ -3360,9 +3397,9 @@ int main()
             for (int j = 1; j <= Y; j++)
             {
                 if (((mp[i][j].type == General || mp[i][j].type == 5) && mapmode != 5 && mapmode != 6 && mapmode != 7) || (mp[i][j].type == General && (mapmode == 5 || mapmode == 6 || mapmode == 7) && mp[i][j].tmp < playermaxhp[mp[i][j].belong]))
-                    mp[i][j].tmp++;
+                    mp[i][j].tmp += (mp[i][j].belong == bossID ? gennum - 1 : 1);
                 else if (mp[i][j].type == Land && turn % 15 == 0)
-                    mp[i][j].tmp++;
+                    mp[i][j].tmp += (mp[i][j].belong == bossID ? gennum - 1 : 1);
                 for (int k = 1; k <= gennum; k++)
                     sight[k][i][j] = false;
                 if ((mapmode == 5 || mapmode == 6 || mapmode == 7) && mp[i][j].type == General && mp[i][j].tmp > playermaxhp[mp[i][j].belong])
