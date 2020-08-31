@@ -2269,6 +2269,9 @@ void savemap()
     {
         outfile.open("Map", ios::out | ios::trunc), isfirstsave = false;
         outfile << mode << " " << mapmode << " " << fvf << endl;
+        for (int i = 0; i < clsNum; i++)
+            outfile << cls[i] << " ";
+        outfile << endl;
     }
     else
         outfile.open("Map", ios::out | ios::app);
@@ -2816,6 +2819,7 @@ int main()
         opt = true;
     if (isreplay == 1)
     {
+        random_shuffle(cls, cls + clsNum);
         convmap();
         if (mapmode == 1 || mapmode == 5 || mapmode == 6 || mapmode == 7)
         {
@@ -2914,6 +2918,8 @@ int main()
         infile.open("Map", ios::in);
         int _mode, _mapmode;
         infile >> _mode >> _mapmode >> fvf;
+        for (int i = 0; i < clsNum; i++)
+            infile >> cls[i];
         mode = (game_mode)_mode;
         mapmode = (map_mode)_mapmode;
         if (X > 15 || Y > 15)
