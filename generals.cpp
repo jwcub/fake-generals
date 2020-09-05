@@ -105,15 +105,15 @@ struct node
 } mp[105][105];
 
 int X = 15, Y = 15;     //地图的长和宽。如果以迷宫地图，请确保地图的长和宽均为奇数
-double wallpr = 0.13;   //墙的密度
-double citypr = 0.05;   //城市的密度
-double objectpr = 0.06; //道具的密度
+double wallPr = 0.13;   //墙的密度
+double cityPr = 0.05;   //城市的密度
+double objectPr = 0.06; //道具的密度
 int tpt = 100;          //每个回合后的等待时间。如果想体验原速，建议设为 400
-int gennum = 4;         //玩家的数量。当然只有沙雕 Bot
-int teamnum = 2;        //队伍的数量。如果以 TDM 模式游玩，请确保玩家数量能被队伍数量整除
+int playerNum = 4;         //玩家的数量。当然只有沙雕 Bot
+int teamNum = 2;        //队伍的数量。如果以 TDM 模式游玩，请确保玩家数量能被队伍数量整除
 int dq = 40;            //毒圈的扩散时间
-int kttime = 100;       //空投的投放时间。请保证此变量大于 10
-int pointstime = 20;    //占领一个据点所需的时间
+int ktTime = 100;       //空投的投放时间。请保证此变量大于 10
+int pointsTime = 20;    //占领一个据点所需的时间
 int paintTime = 300;    //涂色地图的时间
 
 int dir[4][2] = {{-1, 0}, {0, 1}, {1, 0}, {0, -1}};
@@ -122,31 +122,31 @@ bool sight[105][105][105];
 int Inteam[105];
 game_mode mode;
 map_mode mapmode;
-bool teamdead[105];
+bool teamDead[105];
 bool starting = true;
 vector<land_type> objects, normalobjects;
-int blindtimeremain[105];
+int blindTimeRemain[105];
 int ktx, kty;
-bool ktiscoming = false;
-bool iskt[105][105];
-bool ishavets[105];
-int ktremaintime = -1;
-int isreplay;
+bool ktIsComing = false;
+bool isKt[105][105];
+bool isHaveTs[105];
+int ktRemainTime = -1;
+int isReplay;
 bool isPaint;
 int paintRemainTime;
 bool isHaveSend[105];
 int turn = 1;
-int currentplayer = 1;
+int currentPlayer = 1;
 int randnum(int l, int r)
 {
     return rand() % (r - l + 1) + l;
 }
-set<int> ifteam[105];
+set<int> ifTeam[105];
 int rm, fog[105][105];
-int flagscore[105];
-bool ifcanconvobject;
+int flagScore[105];
+bool ifCanGenerateObject;
 bool fvf;
-bool isgz;
+bool isGz;
 bool opt;
 bool isBoss;
 int bossID;
@@ -192,13 +192,13 @@ int dist(int xx1, int yy1, int xx2, int yy2)
 {
     return abs(xx1 - xx2) + abs(yy1 - yy2);
 }
-int alivegennum = gennum, aliveteamnum = teamnum;
+int alivePlayerNum = playerNum, aliveTeamNum = teamNum;
 void congen()
 {
-    for (int i = 1; i <= gennum; i++)
+    for (int i = 1; i <= playerNum; i++)
         order[i] = i;
-    random_shuffle(order + 1, order + gennum + 1);
-    for (int i = 1; i <= gennum; i++)
+    random_shuffle(order + 1, order + playerNum + 1);
+    for (int i = 1; i <= playerNum; i++)
     {
         int px, py;
         while (1)
@@ -226,8 +226,8 @@ void congen()
 }
 void concit()
 {
-    int citynum = double(X * Y) * citypr;
-    for (int i = 1; i <= citynum; i++)
+    int cityNum = double(X * Y) * cityPr;
+    for (int i = 1; i <= cityNum; i++)
     {
         int px, py;
         while (1)
@@ -255,7 +255,7 @@ void dfs(int cnt, int x, int y)
     }
     return;
 }
-int objectnum, aliveobjectnum;
+int objectNum, aliveObjectNum;
 bool checkwall()
 {
     memset(vis, 0, sizeof(vis));
@@ -280,7 +280,7 @@ bool checkwall()
 }
 void convwall()
 {
-    int wallnum = double(X * Y) * wallpr;
+    int wallnum = double(X * Y) * wallPr;
     for (int i = 1; i <= wallnum; i++)
     {
         int px, py;
@@ -360,7 +360,7 @@ void convmaze()
         }
     }
     int calcTimes = 0;
-    for (int i = 1; i <= gennum; i++)
+    for (int i = 1; i <= playerNum; i++)
     {
         ++calcTimes;
         if (calcTimes >= 100)
@@ -486,7 +486,7 @@ void convdragon()
     convmap();
     vector<node2> lst;
     int calcTimes = 0;
-    for (int i = 1; i <= gennum; i++)
+    for (int i = 1; i <= playerNum; i++)
     {
         ++calcTimes;
         if (calcTimes >= 100)
@@ -525,9 +525,9 @@ void convdragon()
         }
         lst.push_back((node2){t1, t2});
     }
-    for (int i = 1; i <= gennum; ++i)
+    for (int i = 1; i <= playerNum; ++i)
     {
-        for (int j = 1; j <= min(X * Y / gennum / 10, 8); ++j)
+        for (int j = 1; j <= min(X * Y / playerNum / 10, 8); ++j)
         {
             int t1 = randnum(1, X - 2) + 1, t2 = randnum(1, Y - 2) + 1;
             while (mp[t1][t2].belong != 0 || mp[t1][t2].type != Empty_land)
@@ -699,14 +699,14 @@ void updateGrenade()
         {
             for (int i = cur.ex - 3; i <= cur.ex + 3; i++)
                 for (int j = cur.ey - 3; j <= cur.ey + 3; j++)
-                    if (i >= 1 && i <= X && j >= 1 && j <= Y && mp[i][j].type == General && mp[i][j].tmp > 0 && (mode == Ffa || mode == Tdm && ifteam[Inteam[mp[i][j].belong]].find(cur.frm) == ifteam[Inteam[mp[i][j].belong]].end() || mp[i][j].belong == cur.frm))
+                    if (i >= 1 && i <= X && j >= 1 && j <= Y && mp[i][j].type == General && mp[i][j].tmp > 0 && (mode == Ffa || mode == Tdm && ifTeam[Inteam[mp[i][j].belong]].find(cur.frm) == ifTeam[Inteam[mp[i][j].belong]].end() || mp[i][j].belong == cur.frm))
                     {
                         mp[i][j].tmp -= cur.dmg;
 
                         if (mapmode == Pubg && mp[i][j].tmp <= 0)
                         {
                             mp[i][j].tozero();
-                            alivegennum--;
+                            alivePlayerNum--;
                         }
                     }
             it = currentGrenade.erase(it);
@@ -793,10 +793,10 @@ void putmap(int sx, int sy, int id)
             {
                 char &currentBlock = miniMap[int(double(i - 1) / xdivs) + 1][int(double(j - 1) / ydivs) + 1];
                 int &currentSM = sm[int(double(i - 1) / xdivs) + 1][int(double(j - 1) / ydivs) + 1];
-                if (iskt[i][j] && iskt[i - 1][j - 1] && iskt[i + 1][j + 1])
+                if (isKt[i][j] && isKt[i - 1][j - 1] && isKt[i + 1][j + 1])
                 {
                     currentBlock = '!';
-                    if (ktremaintime % 2 == 0)
+                    if (ktRemainTime % 2 == 0)
                         currentSM = 20;
                     else
                     {
@@ -832,11 +832,11 @@ void putmap(int sx, int sy, int id)
                         currentSM = max(currentSM, 100);
                     }
                 }
-                if (mp[i][j].belong == id || ifteam[Inteam[id]].find(mp[i][j].belong) != ifteam[Inteam[id]].end() || isreplay == 2 && mp[i][j].belong != 0)
+                if (mp[i][j].belong == id || ifTeam[Inteam[id]].find(mp[i][j].belong) != ifTeam[Inteam[id]].end() || isReplay == 2 && mp[i][j].belong != 0)
                 {
                     if (currentBlock != '!' && currentBlock != '+' && currentBlock != 'X')
                     {
-                        if ((mapmode != Pubg && mapmode != CFlag && mapmode != CPoints && mp[i][j].type == General && gennum <= 8) || isreplay == 2 && mp[i][j].type == General)
+                        if ((mapmode != Pubg && mapmode != CFlag && mapmode != CPoints && mp[i][j].type == General && playerNum <= 8) || isReplay == 2 && mp[i][j].type == General)
                             currentBlock = 'X';
                         else
                             currentBlock = 'O';
@@ -880,7 +880,7 @@ void putmap(int sx, int sy, int id)
     memset(score, 0, sizeof(score));
     if (!sight[id][sx][sy])
         sx = sy = 0;
-    for (int i = 1; i <= gennum; i++)
+    for (int i = 1; i <= playerNum; i++)
         score[i].id = i;
     bool lft = false;
     bool lineprinted, colprinted = false;
@@ -984,7 +984,7 @@ void putmap(int sx, int sy, int id)
                     SetColor(0xc, 0, 1);
                     if (mp[i][j].type == Empty_land)
                     {
-                        if (iskt[i][j])
+                        if (isKt[i][j])
                             printf("▒▒▒▒");
                         else if (fog[i][j])
                             printf("████");
@@ -1066,7 +1066,7 @@ void putmap(int sx, int sy, int id)
                 {
                     if (mp[i][j].type == Empty_land)
                     {
-                        if (iskt[i][j])
+                        if (isKt[i][j])
                             printf("▒▒▒▒");
                         else if (fog[i][j])
                             printf("████");
@@ -1479,7 +1479,7 @@ void putmap(int sx, int sy, int id)
             printf("\n");
         }
     }
-    if (starting || isreplay == 2)
+    if (starting || isReplay == 2)
         return;
     gotoxy(0, 2 * ((starting ? 15 : (X > 15 ? min(sx + 7, X) : X)) - (starting ? 1 : (X > 15 ? sx - 7 : 1)) + 1) + 1);
     for (int i = 1; i <= 9; i++)
@@ -1497,19 +1497,19 @@ void putmap(int sx, int sy, int id)
                     ;
     else
     {
-        for (int i = 1; i <= teamnum; i++)
+        for (int i = 1; i <= teamNum; i++)
             score[i].id = i, score[i].sco = teampointsmatchscore[i], score[i].lnd = teampointsmatchland[i];
     }
     if (fvf && !(mapmode == 7 || mapmode == 6 || mapmode == 5))
     {
-        sort(score + 1, score + gennum + 1, cmpsco);
+        sort(score + 1, score + playerNum + 1, cmpsco);
         bool visplayer[105];
         memset(visplayer, 0, sizeof(visplayer));
         for (int i = sx - 7; i <= sx + 7; i++)
             for (int j = sy - 7; j <= sy + 7; j++)
                 if (i >= 1 && i <= X && j >= 1 && j <= Y && mp[i][j].belong != 0 && mp[i][j].tmp > 0 && sight[id][i][j])
                     visplayer[mp[i][j].belong] = true;
-        for (int i = 1, j = 1; i <= gennum && j <= 5; i++)
+        for (int i = 1, j = 1; i <= playerNum && j <= 5; i++)
             if (visplayer[score[i].id])
             {
                 SetColor(cls[score[i].id % clsNum], 0, 1);
@@ -1521,10 +1521,10 @@ void putmap(int sx, int sy, int id)
     if (mapmode != 6)
     {
         if (!fvf)
-            sort(score + 1, score + gennum + 1, cmpsco);
+            sort(score + 1, score + playerNum + 1, cmpsco);
         if (mapmode == 7)
         {
-            for (int i = 1; i <= teamnum; i++)
+            for (int i = 1; i <= teamNum; i++)
             {
                 SetColor(cls[score[i].id % clsNum], 0, 1);
                 printf("team%d    %d %d\n", score[i].id, score[i].sco, score[i].lnd);
@@ -1534,7 +1534,7 @@ void putmap(int sx, int sy, int id)
         else
         {
             int team1 = 0, team2 = 0;
-            for (int i = 1; i <= gennum; i++)
+            for (int i = 1; i <= playerNum; i++)
             {
                 if (!fvf)
                 {
@@ -1566,10 +1566,10 @@ void putmap(int sx, int sy, int id)
     }
     else
     {
-        for (int i = 1; i <= teamnum; i++)
-            nflagscore[i].pos = i, nflagscore[i].score = flagscore[i];
-        sort(nflagscore + 1, nflagscore + teamnum + 1, cmpteam);
-        for (int i = 1; i <= teamnum; i++)
+        for (int i = 1; i <= teamNum; i++)
+            nflagscore[i].pos = i, nflagscore[i].score = flagScore[i];
+        sort(nflagscore + 1, nflagscore + teamNum + 1, cmpteam);
+        for (int i = 1; i <= teamNum; i++)
         {
             SetColor(cls[nflagscore[i].pos % clsNum], 0, 1);
             printf("team%d    %d\n", nflagscore[i].pos, nflagscore[i].score);
@@ -1581,8 +1581,8 @@ void putmap(int sx, int sy, int id)
         if (mapmode == 5)
             printf("毒圈还有 %d 回合扩散\n", rm);
         printf("当前玩家拥有的物品：剑%d， 护盾%d， 防毒面具%d， 手雷%d\n", playeratk[id], playerac[id], playerfh[id], playerGrenade[id]);
-        if (ktremaintime > 0)
-            printf("空投还有 %d 回合落地\n", ktremaintime);
+        if (ktRemainTime > 0)
+            printf("空投还有 %d 回合落地\n", ktRemainTime);
         if (mapmode == 6 || mapmode == 7)
         {
             if (wd[id] != -1)
@@ -1592,7 +1592,7 @@ void putmap(int sx, int sy, int id)
     }
     if (isPaint)
         printf("涂色模式还剩 %d 回合\n", paintRemainTime);
-    if (isgz)
+    if (isGz)
         printf("您已阵亡，观战中……\n");
     if (isHaveSend[id])
         printf("当前玩家持有闪现技能\n");
@@ -1623,7 +1623,7 @@ void getObject(int frm, int t)
     playerac[t] += playerac[frm];
     playeratk[t] += playeratk[frm];
     playerfh[t] += playerfh[frm];
-    ishavets[t] |= ishavets[frm];
+    isHaveTs[t] |= isHaveTs[frm];
     return;
 }
 struct Player
@@ -1646,7 +1646,7 @@ struct Player
     {
         playerac[playerid] = playeratk[playerid] = playerfh[playerid] = playerGrenade[playerid] = 0;
         playermaxhp[playerid] = 100;
-        ishavets[playerid] = false;
+        isHaveTs[playerid] = false;
         isHaveSend[playerid] = false;
         for (int i = 1; i <= X; i++)
             for (int j = 1; j <= Y; j++)
@@ -1695,7 +1695,7 @@ struct Player
                 for (int j = 1; j <= Y; j++)
                     if (mp[i][j].belong == pid)
                         mp[i][j].belong = playerid;
-            alivegennum--;
+            alivePlayerNum--;
             return;
         }
         for (int i = 1; i <= X; i++)
@@ -1706,14 +1706,14 @@ struct Player
             for (int j = 1; j <= Y; j++)
                 if (mp[i][j].belong == pid)
                     mp[i][j].belong = playerid;
-        alivegennum--;
+        alivePlayerNum--;
         return;
     }
-    void updMovement(node *dp, node *dt, int *opt, int tmp, bool iskt)
+    void updMovement(node *dp, node *dt, int *opt, int tmp, bool isKt)
     {
-        if (mode == 2 && (dt->type == General || dt->type == Land || dt->type == 5) && dt->belong != playerid && ifteam[Inteam[playerid]].find(dt->belong) != ifteam[Inteam[playerid]].end())
+        if (mode == 2 && (dt->type == General || dt->type == Land || dt->type == 5) && dt->belong != playerid && ifTeam[Inteam[playerid]].find(dt->belong) != ifTeam[Inteam[playerid]].end())
             return;
-        if (mapmode == 5 && iskt)
+        if (mapmode == 5 && isKt)
             return;
         if (dt->type == 20)
             return;
@@ -1757,40 +1757,40 @@ struct Player
                 dp->tmp -= dmg2;
                 dt->tmp -= dmg1;
                 if (dp->tmp <= 0 && mapmode != 6 && mapmode != 7)
-                    dp->type = Empty_land, dp->tmp = 0, dp->belong = 0, alivegennum--, getObject(dp->belong, dt->belong);
+                    dp->type = Empty_land, dp->tmp = 0, dp->belong = 0, alivePlayerNum--, getObject(dp->belong, dt->belong);
                 if (dt->tmp <= 0 && mapmode != 6 && mapmode != 7)
-                    dt->type = Empty_land, dt->tmp = 0, dt->belong = 0, alivegennum--, getObject(dt->belong, dp->belong);
+                    dt->type = Empty_land, dt->tmp = 0, dt->belong = 0, alivePlayerNum--, getObject(dt->belong, dp->belong);
             }
             else
             {
                 if (dt->type == 6)
-                    dp->tmp += 10, dt->type = Empty_land, aliveobjectnum--;
+                    dp->tmp += 10, dt->type = Empty_land, aliveObjectNum--;
                 if (dt->type == 7)
-                    playerac[dp->belong]++, dt->type = Empty_land, aliveobjectnum--;
+                    playerac[dp->belong]++, dt->type = Empty_land, aliveObjectNum--;
                 if (dt->type == 8)
-                    playeratk[dp->belong]++, dt->type = Empty_land, aliveobjectnum--;
+                    playeratk[dp->belong]++, dt->type = Empty_land, aliveObjectNum--;
                 if (dt->type == 11)
-                    dp->tmp += 30, dt->type = Empty_land, aliveobjectnum--;
+                    dp->tmp += 30, dt->type = Empty_land, aliveObjectNum--;
                 if (dt->type == 12)
-                    playerac[dp->belong] += 3, dt->type = Empty_land, aliveobjectnum--;
+                    playerac[dp->belong] += 3, dt->type = Empty_land, aliveObjectNum--;
                 if (dt->type == 13)
-                    playeratk[dp->belong] += 3, dt->type = Empty_land, aliveobjectnum--;
+                    playeratk[dp->belong] += 3, dt->type = Empty_land, aliveObjectNum--;
                 if (dt->type == 14)
-                    blindtimeremain[dp->belong] = 10, dt->type = Empty_land, aliveobjectnum--;
+                    blindTimeRemain[dp->belong] = 10, dt->type = Empty_land, aliveObjectNum--;
                 if (dt->type == 15)
-                    playermaxhp[dp->belong] += 10, dt->type = Empty_land, aliveobjectnum--;
+                    playermaxhp[dp->belong] += 10, dt->type = Empty_land, aliveObjectNum--;
                 if (dt->type == 16)
-                    playermaxhp[dp->belong] += 30, dt->type = Empty_land, aliveobjectnum--;
+                    playermaxhp[dp->belong] += 30, dt->type = Empty_land, aliveObjectNum--;
                 if (dt->type == 17)
-                    ishavets[dp->belong] = true, dt->type = Empty_land, aliveobjectnum--;
+                    isHaveTs[dp->belong] = true, dt->type = Empty_land, aliveObjectNum--;
                 if (dt->type == 18)
-                    playerfh[dp->belong]++, dt->type = Empty_land, aliveobjectnum--;
+                    playerfh[dp->belong]++, dt->type = Empty_land, aliveObjectNum--;
                 if (dt->type == 19)
-                    playerfh[dp->belong] += 3, dt->type = Empty_land, aliveobjectnum--;
+                    playerfh[dp->belong] += 3, dt->type = Empty_land, aliveObjectNum--;
                 if (dt->type == Send)
-                    isHaveSend[dp->belong] = true, dt->type = Empty_land, aliveobjectnum--;
+                    isHaveSend[dp->belong] = true, dt->type = Empty_land, aliveObjectNum--;
                 if (dt->type == Grrenade)
-                    playerGrenade[dp->belong]++, dt->type = Empty_land, aliveobjectnum--;
+                    playerGrenade[dp->belong]++, dt->type = Empty_land, aliveObjectNum--;
                 if (dt->type == 9)
                 {
                     if (dt->belong != Inteam[playerid] && !ifgetflag[playerid])
@@ -1806,7 +1806,7 @@ struct Player
                     else if (dt->belong == Inteam[playerid] && ifgetflag[playerid])
                     {
                         mp[flg[ifgetflag[playerid]].sx][flg[ifgetflag[playerid]].sy].type = Flag, mp[flg[ifgetflag[playerid]].sx][flg[ifgetflag[playerid]].sy].belong = flg[ifgetflag[playerid]].belong;
-                        flagscore[Inteam[playerid]]++;
+                        flagScore[Inteam[playerid]]++;
                         news[newsr].a = playerid;
                         news[newsr].opt = 3;
                         news[newsr].remtime = 50;
@@ -1828,7 +1828,7 @@ struct Player
         if (mp[selectedx][selectedy].belong == playerid && mp[selectedx - 1][selectedy].type != Wall && mp[selectedx][selectedy].tmp > 1)
         {
             node *dp = &mp[selectedx][selectedy], *dt = &mp[selectedx - 1][selectedy];
-            updMovement(dp, dt, &selectedx, -1, iskt[selectedx - 1][selectedy]);
+            updMovement(dp, dt, &selectedx, -1, isKt[selectedx - 1][selectedy]);
         }
         return;
     }
@@ -1837,7 +1837,7 @@ struct Player
         if (mp[selectedx][selectedy].belong == playerid && mp[selectedx + 1][selectedy].type != Wall && mp[selectedx][selectedy].tmp > 1)
         {
             node *dp = &mp[selectedx][selectedy], *dt = &mp[selectedx + 1][selectedy];
-            updMovement(dp, dt, &selectedx, 1, iskt[selectedx + 1][selectedy]);
+            updMovement(dp, dt, &selectedx, 1, isKt[selectedx + 1][selectedy]);
         }
         return;
     }
@@ -1846,7 +1846,7 @@ struct Player
         if (mp[selectedx][selectedy].belong == playerid && mp[selectedx][selectedy - 1].type != Wall && mp[selectedx][selectedy].tmp > 1)
         {
             node *dp = &mp[selectedx][selectedy], *dt = &mp[selectedx][selectedy - 1];
-            updMovement(dp, dt, &selectedy, -1, iskt[selectedx][selectedy - 1]);
+            updMovement(dp, dt, &selectedy, -1, isKt[selectedx][selectedy - 1]);
         }
         return;
     }
@@ -1855,7 +1855,7 @@ struct Player
         if (mp[selectedx][selectedy].belong == playerid && mp[selectedx][selectedy + 1].type != Wall && mp[selectedx][selectedy].tmp > 1)
         {
             node *dp = &mp[selectedx][selectedy], *dt = &mp[selectedx][selectedy + 1];
-            updMovement(dp, dt, &selectedy, 1, iskt[selectedx][selectedy + 1]);
+            updMovement(dp, dt, &selectedy, 1, isKt[selectedx][selectedy + 1]);
         }
         return;
     }
@@ -2042,7 +2042,7 @@ struct Team
 void addPlayerToTeam(int pid, int tid)
 {
     player[pid].inteam = tid;
-    ifteam[tid].insert(pid);
+    ifTeam[tid].insert(pid);
     team[tid].membernum++;
     Inteam[pid] = tid;
     team[tid].members[team[tid].membernum] = &player[pid];
@@ -2050,27 +2050,27 @@ void addPlayerToTeam(int pid, int tid)
 }
 void teaming()
 {
-    for (int i = 1; i <= teamnum; i++)
+    for (int i = 1; i <= teamNum; i++)
     {
         team[i].tozero();
         team[i].teamid = i;
     }
     if (isBoss)
     {
-        bossID = randnum(1, gennum);
+        bossID = randnum(1, playerNum);
         addPlayerToTeam(bossID, 1);
-        for (int i = 1; i <= gennum; i++)
+        for (int i = 1; i <= playerNum; i++)
             if (i != bossID)
                 addPlayerToTeam(i, 2);
         return;
     }
-    for (int i = 1; i <= gennum; i++)
+    for (int i = 1; i <= playerNum; i++)
     {
-        player[i].inteam = (i + (gennum / teamnum) - 1) / (gennum / teamnum);
-        ifteam[(i + (gennum / teamnum) - 1) / (gennum / teamnum)].insert(i);
-        team[(i + (gennum / teamnum) - 1) / (gennum / teamnum)].membernum++;
-        Inteam[i] = (i + (gennum / teamnum) - 1) / (gennum / teamnum);
-        team[(i + (gennum / teamnum) - 1) / (gennum / teamnum)].members[team[(i + (gennum / teamnum) - 1) / (gennum / teamnum)].membernum] = &player[i];
+        player[i].inteam = (i + (playerNum / teamNum) - 1) / (playerNum / teamNum);
+        ifTeam[(i + (playerNum / teamNum) - 1) / (playerNum / teamNum)].insert(i);
+        team[(i + (playerNum / teamNum) - 1) / (playerNum / teamNum)].membernum++;
+        Inteam[i] = (i + (playerNum / teamNum) - 1) / (playerNum / teamNum);
+        team[(i + (playerNum / teamNum) - 1) / (playerNum / teamNum)].members[team[(i + (playerNum / teamNum) - 1) / (playerNum / teamNum)].membernum] = &player[i];
     }
     return;
 }
@@ -2084,32 +2084,32 @@ void addObject(land_type tp, vector<land_type> &objs)
     objs.push_back(tp);
     return;
 }
-void convobject()
+void generateObject()
 {
-    while (aliveobjectnum < objectnum)
+    while (aliveObjectNum < objectNum)
     {
-        int px, py, trytime = 0;
+        int px, py, tryTime = 0;
         if (mapmode == 7)
         {
             while (1)
             {
                 px = randnum(1, X), py = randnum(1, Y);
-                trytime++;
-                if (mp[px][py].type == 20 || trytime > 100)
+                tryTime++;
+                if (mp[px][py].type == 20 || tryTime > 100)
                     break;
             }
-            if (trytime > 100)
+            if (tryTime > 100)
                 continue;
             int gx, gy;
             while (1)
             {
                 gx = randnum(px - 3, px + 3);
                 gy = randnum(py - 3, py + 3);
-                trytime++;
-                if ((gx >= 1 && gx <= X && gy >= 1 && gy <= Y && mp[gx][gy].type == Empty_land) || trytime > 100)
+                tryTime++;
+                if ((gx >= 1 && gx <= X && gy >= 1 && gy <= Y && mp[gx][gy].type == Empty_land) || tryTime > 100)
                     break;
             }
-            if (trytime > 100)
+            if (tryTime > 100)
                 continue;
             while (1)
             {
@@ -2118,17 +2118,17 @@ void convobject()
                     continue;
                 break;
             }
-            aliveobjectnum++;
+            aliveObjectNum++;
             continue;
         }
         while (1)
         {
             px = randnum(1, X), py = randnum(1, Y);
-            trytime++;
-            if (mp[px][py].type == Empty_land || trytime > 100)
+            tryTime++;
+            if (mp[px][py].type == Empty_land || tryTime > 100)
                 break;
         }
-        if (trytime > 100)
+        if (tryTime > 100)
             continue;
         while (1)
         {
@@ -2137,13 +2137,13 @@ void convobject()
                 continue;
             break;
         }
-        aliveobjectnum++;
+        aliveObjectNum++;
     }
     return;
 }
-void spawnkt()
+void spawnKt()
 {
-    for (int trytime = 0; trytime < 100; trytime++)
+    for (int tryTime = 0; tryTime < 100; tryTime++)
     {
         int i = randnum(2, X - 1), j = randnum(2, Y - 1);
         bool flag = true;
@@ -2159,28 +2159,28 @@ void spawnkt()
         {
             ktx = i;
             kty = j;
-            ktremaintime = 10;
+            ktRemainTime = 10;
             for (int k = i - 1; k <= i + 1; k++)
                 for (int w = j - 1; w <= j + 1; w++)
-                    iskt[k][w] = true;
+                    isKt[k][w] = true;
             break;
         }
     }
     return;
 }
-void getkt()
+void getKt()
 {
     for (int i = ktx - 1; i <= ktx + 1; i++)
         for (int j = kty - 1; j <= kty + 1; j++)
         {
             mp[i][j].type = getRadomObjects(objects);
-            iskt[i][j] = false;
+            isKt[i][j] = false;
         }
     return;
 }
-void pubgconv()
+void pubgConv()
 {
-    for (int i = 1; i <= gennum; i++)
+    for (int i = 1; i <= playerNum; i++)
         playermaxhp[i] = 100;
     for (int i = 1; i <= X; i++)
         for (int j = 1; j <= Y; j++)
@@ -2213,38 +2213,38 @@ struct pnt
         return;
     }
 } pnts[200];
-void pointsmatchconv()
+void pointsMatchConv()
 {
-    for (int i = 1; i <= gennum; i++)
+    for (int i = 1; i <= playerNum; i++)
     {
         pnts[i].tozero();
         pnts[i].conv();
     }
     return;
 }
-void readconfig()
+void readConfig()
 {
     ifstream infile;
     infile.open("config", ios::in);
-    infile >> X >> Y >> wallpr >> citypr >> objectpr >> tpt >> gennum >> teamnum >> dq >> kttime >> pointstime >> paintTime;
+    infile >> X >> Y >> wallPr >> cityPr >> objectPr >> tpt >> playerNum >> teamNum >> dq >> ktTime >> pointsTime >> paintTime;
     infile.close();
     return;
 }
-void saveconfig()
+void saveConfig()
 {
     ofstream outfile;
     outfile.open("config", ios::out | ios::trunc);
     outfile << X << endl
             << Y << endl
-            << wallpr << endl
-            << citypr << endl
-            << objectpr << endl
+            << wallPr << endl
+            << cityPr << endl
+            << objectPr << endl
             << tpt << endl
-            << gennum << endl
-            << teamnum << endl
+            << playerNum << endl
+            << teamNum << endl
             << dq << endl
-            << kttime << endl
-            << pointstime << endl
+            << ktTime << endl
+            << pointsTime << endl
             << paintTime << endl;
     outfile.close();
     return;
@@ -2262,7 +2262,7 @@ void flushOpt()
     }
     return;
 }
-void savemap()
+void saveMap()
 {
     ofstream outfile;
     if (isfirstsave)
@@ -2280,12 +2280,12 @@ void savemap()
         {
             outfile << mp[i][j].belong << " " << mp[i][j].tmp << " " << mp[i][j].type;
             if (mapmode == Pubg)
-                outfile << " " << fog[i][j] << " " << iskt[i][j];
+                outfile << " " << fog[i][j] << " " << isKt[i][j];
             outfile << endl;
         }
     if (mapmode == CFlag)
     {
-        for (int i = 1; i <= gennum; i++)
+        for (int i = 1; i <= playerNum; i++)
             outfile << ifgetflag[i] << " ";
         outfile << endl;
     }
@@ -2300,7 +2300,7 @@ void savemap()
 }
 void savereplay()
 {
-    saveconfig();
+    saveConfig();
     ofstream outfile;
     outfile.open("Map", ios::out | ios::app);
     outfile << "-1 -1 -1" << endl;
@@ -2381,12 +2381,12 @@ void commandLine()
                 cout << "SyntaxError";
             else if (myto_int(tmp[2]) == 0)
             {
-                  currentplayer = getRandomAlivePlayer();
+                  currentPlayer = getRandomAlivePlayer();
             }
-            else if (myto_int(tmp[2]) < 1 || myto_int(tmp[2]) > gennum)
+            else if (myto_int(tmp[2]) < 1 || myto_int(tmp[2]) > playerNum)
                 cout << "ValueError";
             else
-                currentplayer = myto_int(tmp[2]);
+                currentPlayer = myto_int(tmp[2]);
         }
         else if (tmp[1] == "makeselect")
         {
@@ -2396,21 +2396,21 @@ void commandLine()
             {
                 int px, py;
                 if (tmp[2] == "~")
-                    px = player[currentplayer].selectedx;
+                    px = player[currentPlayer].selectedx;
                 else
                 {
                     px = myto_int(tmp[2]);
                 }
                 if (tmp[3] == "~")
-                    py = player[currentplayer].selectedy;
+                    py = player[currentPlayer].selectedy;
                 else
                 {
                     py = myto_int(tmp[3]);
                 }
-                if (px >= 1 && px <= X && py >= 1 && py <= Y && mp[px][py].belong == currentplayer)
+                if (px >= 1 && px <= X && py >= 1 && py <= Y && mp[px][py].belong == currentPlayer)
                 {
-                    player[currentplayer].selectedx = px;
-                    player[currentplayer].selectedy = py;
+                    player[currentPlayer].selectedx = px;
+                    player[currentPlayer].selectedy = py;
                 }
                 else
                     cout << "ValueError";
@@ -2424,13 +2424,13 @@ void commandLine()
             {
                 int px, py, k;
                 if (tmp[2] == "~")
-                    px = player[currentplayer].selectedx;
+                    px = player[currentPlayer].selectedx;
                 else
                 {
                     px = myto_int(tmp[2]);
                 }
                 if (tmp[3] == "~")
-                    py = player[currentplayer].selectedy;
+                    py = player[currentPlayer].selectedy;
                 else
                 {
                     py = myto_int(tmp[3]);
@@ -2438,7 +2438,7 @@ void commandLine()
                 k = myto_int(tmp[4]);
                 if (px >= 1 && px <= X && py >= 1 && py <= Y)
                 {
-                    if (tmp[1] == "setbelong" && k >= 0 && k <= gennum)
+                    if (tmp[1] == "setbelong" && k >= 0 && k <= playerNum)
                     {
                         if (k == 0)
                             k = getRandomAlivePlayer();
@@ -2465,7 +2465,7 @@ void commandLine()
                 a = myto_int(tmp[2]);
                 if (a == 0)
                     a = getRandomAlivePlayer();
-                else if (a < 1 || a > gennum || !isAlive(a))
+                else if (a < 1 || a > playerNum || !isAlive(a))
                     cout << "ValueError";
                 if (tot == 2)
                 {
@@ -2479,14 +2479,14 @@ void commandLine()
                                         mp[i][j].tozero();
                                 }        
                     if (mapmode != CFlag && mapmode != CPoints)
-                        alivegennum--;
+                        alivePlayerNum--;
                 }
                 else if (tot == 3)
                 {
                     b = myto_int(tmp[3]);
                     if (b == 0)
                         b = getRandomAlivePlayer();
-                    else if (b < 1 || b > gennum || a == b || !isAlive(b))
+                    else if (b < 1 || b > playerNum || a == b || !isAlive(b))
                         cout << "ValueError";
                     else
                     {
@@ -2537,19 +2537,19 @@ void commandLine()
                 cout << "SyntaxError";
             int xx1, yy1, xx2, yy2;
             if (tmp[2] == "~")
-                xx1 = player[currentplayer].selectedx;
+                xx1 = player[currentPlayer].selectedx;
             else
                 xx1 = myto_int(tmp[2]);
             if (tmp[3] == "~")
-                yy1 = player[currentplayer].selectedy;
+                yy1 = player[currentPlayer].selectedy;
             else
                 yy1 = myto_int(tmp[3]);
             if (tmp[4] == "~")
-                xx2 = player[currentplayer].selectedx;
+                xx2 = player[currentPlayer].selectedx;
             else
                 xx2 = myto_int(tmp[4]);
             if (tmp[5] == "~")
-                yy2 = player[currentplayer].selectedy;
+                yy2 = player[currentPlayer].selectedy;
             else
                 yy2 = myto_int(tmp[5]);
             if (xx1 < 1 || xx1 > X || yy1 < 1 || yy1 > Y || xx2 < 1 || xx2 > X || yy2 < 1 || yy2 > Y)
@@ -2560,7 +2560,7 @@ void commandLine()
         else if (tmp[1] == "clear")
         {
             system("cls");
-            putmap(player[currentplayer].selectedx, player[currentplayer].selectedy, currentplayer);
+            putmap(player[currentPlayer].selectedx, player[currentPlayer].selectedy, currentPlayer);
         }
         else
         {
@@ -2575,18 +2575,18 @@ void mapEditor()
 {
     system("cls");
     int opt = 0;
-    currentplayer = 0;
-    player[currentplayer].selectedx = 0, player[currentplayer].selectedy = 0;
+    currentPlayer = 0;
+    player[currentPlayer].selectedx = 0, player[currentPlayer].selectedy = 0;
     if (X > 15 || Y > 15)
     {
-        player[currentplayer].selectedx = (X >> 1), player[currentplayer].selectedy = (Y >> 1);
+        player[currentPlayer].selectedx = (X >> 1), player[currentPlayer].selectedy = (Y >> 1);
     }
     while (1)
     {
         for (int i = 1; i <= X; i++)
             for (int j = 1; j <= Y; j++)
                 sight[0][i][j] = true;
-        putmap(player[currentplayer].selectedx, player[currentplayer].selectedy, 0);
+        putmap(player[currentPlayer].selectedx, player[currentPlayer].selectedy, 0);
         if (opt == 0)
             printf("修改类型\n");
         else if (opt == 1)
@@ -2606,8 +2606,8 @@ void mapEditor()
         if (KEY_DOWN(MOUSE_MOVED))
         {
             GetCursorPos(&p1);
-            int sp = int(round((double(p1.y) - double(xx1)) / dx)) + 1 + (X > 15 ? player[currentplayer].selectedx - 8 : 0);
-            int sq = int(round((double(p1.x) - double(yy1)) / dy)) + 1 + (Y > 15 ? player[currentplayer].selectedy - 8 : 0);
+            int sp = int(round((double(p1.y) - double(xx1)) / dx)) + 1 + (X > 15 ? player[currentPlayer].selectedx - 8 : 0);
+            int sq = int(round((double(p1.x) - double(yy1)) / dy)) + 1 + (Y > 15 ? player[currentPlayer].selectedy - 8 : 0);
             if (opt == 0)
             {
                 int tmp;
@@ -2631,8 +2631,8 @@ void mapEditor()
             }
             else if (opt == 3)
             {
-                player[currentplayer].selectedx = sp;
-                player[currentplayer].selectedy = sq;
+                player[currentPlayer].selectedx = sp;
+                player[currentPlayer].selectedy = sq;
             }
         }
         if (KEY_DOWN('C'))
@@ -2688,11 +2688,11 @@ int main()
     while (1)
     {
         printf("1 = 正常游戏， 2 = 播放回放\n");
-        scanf("%d", &isreplay);
-        if (isreplay == 1 || isreplay == 2)
+        scanf("%d", &isReplay);
+        if (isReplay == 1 || isReplay == 2)
             break;
     }
-    if (isreplay == 1)
+    if (isReplay == 1)
     {
         while (1)
         {
@@ -2707,17 +2707,17 @@ int main()
             mode = Tdm;
             X = 99;
             Y = 99;
-            gennum = 100;
-            teamnum = 2;
+            playerNum = 100;
+            teamNum = 2;
             dq = 10;
-            objectpr = 0.05;
-            kttime = 20;
+            objectPr = 0.05;
+            ktTime = 20;
         }
         if (mode == Boss)
         {
             isBoss = true;
             mode = Tdm;
-            teamnum = 2;
+            teamNum = 2;
         }
         while (1)
         {
@@ -2756,7 +2756,7 @@ int main()
         }
         if (ifown == 2)
         {
-            readconfig();
+            readConfig();
             printf("读取配置文件成功！\n");
         }
         if (ifown == 3)
@@ -2766,23 +2766,23 @@ int main()
             printf("请输入地图的宽\n");
             scanf("%d", &Y);
             printf("请输入墙的密度\n");
-            scanf("%lf", &wallpr);
+            scanf("%lf", &wallPr);
             printf("请输入城市的密度\n");
-            scanf("%lf", &citypr);
+            scanf("%lf", &cityPr);
             printf("请输入道具的密度\n");
-            scanf("%lf", &objectpr);
+            scanf("%lf", &objectPr);
             printf("请输入每个回合后的等待时间\n");
             scanf("%d", &tpt);
             printf("请输入玩家的数量\n");
-            scanf("%d", &gennum);
+            scanf("%d", &playerNum);
             printf("请输入队伍的数量\n");
-            scanf("%d", &teamnum);
+            scanf("%d", &teamNum);
             printf("请输入毒圈的扩散时间\n");
             scanf("%d", &dq);
             printf("请输入空投的投放时间\n");
-            scanf("%d", &kttime);
+            scanf("%d", &ktTime);
             printf("请输入占领一个据点所需的时间\n");
-            scanf("%d", &pointstime);
+            scanf("%d", &pointsTime);
             printf("请输入涂色地图的时间\n");
             scanf("%d", &paintTime);
             printf("是否保存配置文件？(1 = 是，2 = 否)\n");
@@ -2790,7 +2790,7 @@ int main()
             scanf("%d", &tmp);
             if (tmp == 1)
             {
-                saveconfig();
+                saveConfig();
                 printf("保存配置文件成功！\n");
             }
         }
@@ -2803,7 +2803,7 @@ int main()
         if (mapopt == 1 || mapopt == 2)
             break;
     }
-    if ((mapmode == Pubg || mapmode == CFlag || mapmode == CPoints) && isreplay == 1)
+    if ((mapmode == Pubg || mapmode == CFlag || mapmode == CPoints) && isReplay == 1)
     {
         int pp;
         while (1)
@@ -2817,7 +2817,7 @@ int main()
     }
     if (mapopt == 2)
         opt = true;
-    if (isreplay == 1)
+    if (isReplay == 1)
     {
         random_shuffle(cls, cls + clsNum);
         convmap();
@@ -2849,8 +2849,8 @@ int main()
             teaming();
         if (mapmode == 6)
         {
-            ifcanconvobject = true;
-            for (int i = 1; i <= teamnum; i++)
+            ifCanGenerateObject = true;
+            for (int i = 1; i <= teamNum; i++)
             {
                 flg[i].belong = i;
                 flg[i].conv();
@@ -2859,9 +2859,9 @@ int main()
     }
     memset(sight, 0, sizeof(sight));
     int keys[5] = {'W', 'S', 'A', 'D', 'Z'};
-    objectnum = int(double(X * Y) * objectpr);
-    alivegennum = gennum, aliveteamnum = teamnum;
-    if (isreplay == 1)
+    objectNum = int(double(X * Y) * objectPr);
+    alivePlayerNum = playerNum, aliveTeamNum = teamNum;
+    if (isReplay == 1)
     {
         if (X > 15 || Y > 15)
         {
@@ -2873,7 +2873,7 @@ int main()
                     break;
             }
         }
-        for (int k = 1; k <= gennum; k++)
+        for (int k = 1; k <= playerNum; k++)
         {
             player[k].playerid = k, player[k].halfselect = false, player[k].isbot = false;
             for (int i = 1; i <= X; i++)
@@ -2886,15 +2886,15 @@ int main()
                         break;
                     }
         }
-        for (int i = 2; i <= gennum; i++)
+        for (int i = 2; i <= playerNum; i++)
         {
             player[i].isbot = true;
             player[i].botit();
         }
         if (mapmode == 5 || mapmode == 6 || mapmode == 7)
-            pubgconv();
+            pubgConv();
         if (mapmode == 7)
-            pointsmatchconv();
+            pointsMatchConv();
         int isDiy;
         while (1)
         {
@@ -2907,10 +2907,10 @@ int main()
             mapEditor();
         system("cls");
     }
-    if (isreplay == 2)
+    if (isReplay == 2)
     {
-        readconfig();
-        for (int k = 1; k <= gennum; k++)
+        readConfig();
+        for (int k = 1; k <= playerNum; k++)
             for (int i = 1; i <= X; i++)
                 for (int j = 1; j <= Y; j++)
                     sight[k][i][j] = true;
@@ -2944,7 +2944,7 @@ int main()
                     int tmpp;
                     infile >> mp[i][j].belong >> mp[i][j].tmp >> tmpp;
                     if (mapmode == Pubg)
-                        infile >> fog[i][j] >> iskt[i][j];
+                        infile >> fog[i][j] >> isKt[i][j];
                     if (tmpp == -1 || mp[i][j].belong == -1 || mp[i][j].tmp == -1)
                     {
                         isend = true;
@@ -2956,7 +2956,7 @@ int main()
             if (isend)
                 break;
             if (mapmode == CFlag)
-                for (int i = 1; i <= gennum; i++)
+                for (int i = 1; i <= playerNum; i++)
                     infile >> ifgetflag[i];
             if (mapmode == Pubg || mapmode == CPoints || mapmode == CFlag)
             {
@@ -2972,8 +2972,8 @@ int main()
                     isGrenade[p2][p3] = p1;
                 }
             }
-            putmap(player[currentplayer].selectedx, player[currentplayer].selectedy, currentplayer);
-            for (int k = 1; k <= gennum; k++)
+            putmap(player[currentPlayer].selectedx, player[currentPlayer].selectedy, currentPlayer);
+            for (int k = 1; k <= playerNum; k++)
             {
                 player[k].playerid = k, player[k].halfselect = false, player[k].isbot = false;
                 for (int i = 1; i <= X; i++)
@@ -2989,11 +2989,11 @@ int main()
             if (KEY_DOWN('F'))
                 while (1)
                 {
-                    currentplayer = (currentplayer == gennum ? 1 : currentplayer + 1);
+                    currentPlayer = (currentPlayer == playerNum ? 1 : currentPlayer + 1);
                     bool flag = false;
                     for (int i = 1; i <= X; i++)
                         for (int j = 1; j <= Y; j++)
-                            if (mp[i][j].type == General && mp[i][j].belong == currentplayer && mp[i][j].tmp > 0)
+                            if (mp[i][j].type == General && mp[i][j].belong == currentPlayer && mp[i][j].tmp > 0)
                             {
                                 flag = true;
                                 i = X + 1;
@@ -3030,22 +3030,22 @@ int main()
         paintRemainTime = paintTime;
     if (mode == 1)
     {
-        while (alivegennum > 1 && (!isPaint || isPaint && paintRemainTime > 0))
+        while (alivePlayerNum > 1 && (!isPaint || isPaint && paintRemainTime > 0))
         {
             if (isGMode)
-                playerGrenade[currentplayer] = 1;
+                playerGrenade[currentPlayer] = 1;
             rm = dq - turn % dq;
-            putmap(player[currentplayer].selectedx, player[currentplayer].selectedy, currentplayer);
+            putmap(player[currentPlayer].selectedx, player[currentPlayer].selectedy, currentPlayer);
             char inp = ' ';
             bool ismouse = true;
             if (mapmode == 5)
             {
-                if (ktremaintime > 0)
-                    ktremaintime--;
-                if (ktremaintime == 0)
+                if (ktRemainTime > 0)
+                    ktRemainTime--;
+                if (ktRemainTime == 0)
                 {
-                    getkt();
-                    ktremaintime = -1;
+                    getKt();
+                    ktRemainTime = -1;
                 }
             }
             for (int j = 0; j < 5; j++)
@@ -3054,32 +3054,32 @@ int main()
             if (ismouse && KEY_DOWN(MOUSE_MOVED))
             {
                 GetCursorPos(&p1);
-                int sp = int(round((double(p1.y) - double(xx1)) / dx)) + 1 + (X > 15 ? player[currentplayer].selectedx - 8 : 0);
-                int sq = int(round((double(p1.x) - double(yy1)) / dy)) + 1 + (Y > 15 ? player[currentplayer].selectedy - 8 : 0);
-                player[currentplayer].selectedx = sp;
-                player[currentplayer].selectedy = sq;
+                int sp = int(round((double(p1.y) - double(xx1)) / dx)) + 1 + (X > 15 ? player[currentPlayer].selectedx - 8 : 0);
+                int sq = int(round((double(p1.x) - double(yy1)) / dy)) + 1 + (Y > 15 ? player[currentPlayer].selectedy - 8 : 0);
+                player[currentPlayer].selectedx = sp;
+                player[currentPlayer].selectedy = sq;
                 ismouse = false;
-                if (isHaveSend[currentplayer] && sight[currentplayer][sp][sq] && mp[sp][sq].type == Empty_land)
+                if (isHaveSend[currentPlayer] && sight[currentPlayer][sp][sq] && mp[sp][sq].type == Empty_land)
                 {
                     for (int i = 1; i <= X; i++)
                         for (int j = 1; j <= Y; j++)
-                            if (mp[i][j].type == General && mp[i][j].belong == currentplayer)
+                            if (mp[i][j].type == General && mp[i][j].belong == currentPlayer)
                             {
                                 swap(mp[i][j], mp[sp][sq]);
                                 i = X + 1;
-                                isHaveSend[currentplayer] = false;
+                                isHaveSend[currentPlayer] = false;
                                 break;
                             }
                 }
-                else if (playerGrenade[currentplayer] > 0 && mp[sp][sq].type != Wall)
+                else if (playerGrenade[currentPlayer] > 0 && mp[sp][sq].type != Wall)
                 {
                     for (int i = 1; i <= X; i++)
                         for (int j = 1; j <= Y; j++)
-                            if (mp[i][j].type == General && mp[i][j].belong == currentplayer)
+                            if (mp[i][j].type == General && mp[i][j].belong == currentPlayer)
                             {
-                                addGrenade(i, j, sp, sq, playerGrenade[currentplayer] * 20, currentplayer);
+                                addGrenade(i, j, sp, sq, playerGrenade[currentPlayer] * 20, currentPlayer);
                                 i = X + 1;
-                                playerGrenade[currentplayer] = 0;
+                                playerGrenade[currentPlayer] = 0;
                                 break;
                             }
                 }
@@ -3109,18 +3109,18 @@ int main()
                     isMiniMap = false;
             }
             if (inp == 'Z')
-                player[currentplayer].halfselect ^= 1;
+                player[currentPlayer].halfselect ^= 1;
             else
-                player[currentplayer].playermove(inp);
+                player[currentPlayer].playermove(inp);
             if (KEY_DOWN('F'))
             {
                 while (1)
                 {
-                    currentplayer = (currentplayer == gennum ? 1 : currentplayer + 1);
+                    currentPlayer = (currentPlayer == playerNum ? 1 : currentPlayer + 1);
                     bool flag = false;
                     for (int i = 1; i <= X; i++)
                         for (int j = 1; j <= Y; j++)
-                            if (mp[i][j].type == General && mp[i][j].belong == currentplayer && mp[i][j].tmp > 0)
+                            if (mp[i][j].type == General && mp[i][j].belong == currentPlayer && mp[i][j].tmp > 0)
                             {
                                 flag = true;
                                 i = X + 1;
@@ -3130,7 +3130,7 @@ int main()
                         break;
                 }
             }
-            for (int i = 1; i <= gennum; i++)
+            for (int i = 1; i <= playerNum; i++)
                 if (player[i].isbot)
                     player[i].botmove();
             for (int i = 1; i <= X; i++)
@@ -3140,7 +3140,7 @@ int main()
                         mp[i][j].tmp++;
                     else if (mp[i][j].type == Land && turn % 15 == 0)
                         mp[i][j].tmp++;
-                    for (int k = 1; k <= gennum; k++)
+                    for (int k = 1; k <= playerNum; k++)
                         sight[k][i][j] = false;
                     if ((mapmode == 5 || mapmode == 6 || mapmode == CPoints) && mp[i][j].type == General && mp[i][j].tmp > playermaxhp[mp[i][j].belong])
                         mp[i][j].tmp = playermaxhp[mp[i][j].belong];
@@ -3150,11 +3150,11 @@ int main()
                     if (mp[i][j].belong)
                     {
                         sight[mp[i][j].belong][i][j] = true;
-                        if (mapmode == 5 && blindtimeremain[mp[i][j].belong] > 0)
+                        if (mapmode == 5 && blindTimeRemain[mp[i][j].belong] > 0)
                             continue;
-                        if (mapmode == 5 && mp[i][j].belong == currentplayer)
-                            for (int k = i - 2 - ishavets[currentplayer]; k <= i + 2 + ishavets[currentplayer]; k++)
-                                for (int w = j - 2 - ishavets[currentplayer]; w <= j + 2 + ishavets[currentplayer]; w++)
+                        if (mapmode == 5 && mp[i][j].belong == currentPlayer)
+                            for (int k = i - 2 - isHaveTs[currentPlayer]; k <= i + 2 + isHaveTs[currentPlayer]; k++)
+                                for (int w = j - 2 - isHaveTs[currentPlayer]; w <= j + 2 + isHaveTs[currentPlayer]; w++)
                                     if (k >= 1 && k <= X && w >= 1 && w <= Y)
                                         sight[mp[i][j].belong][k][w] = true;
                                     else
@@ -3172,18 +3172,18 @@ int main()
                             for (int w = j - 2; w <= j + 2; w++)
                                 if (k >= 1 && k <= X && w >= 1 && w <= Y)
                                     sight[isGrenade[i][j]][k][w] = true;
-            if (mp[player[currentplayer].selectedx][player[currentplayer].selectedy].belong != currentplayer)
+            if (mp[player[currentPlayer].selectedx][player[currentPlayer].selectedy].belong != currentPlayer)
                 for (int i = 1; i <= X; i++)
                     for (int j = 1; j <= Y; j++)
-                        if (mp[i][j].type == General && mp[i][j].belong == currentplayer)
+                        if (mp[i][j].type == General && mp[i][j].belong == currentPlayer)
                         {
-                            player[currentplayer].selectedx = i;
-                            player[currentplayer].selectedy = j;
+                            player[currentPlayer].selectedx = i;
+                            player[currentPlayer].selectedy = j;
                             i = X + 1;
                             break;
                         }
-            if (rm == 1 && mapmode == 5 && aliveobjectnum < objectnum)
-                convobject();
+            if (rm == 1 && mapmode == 5 && aliveObjectNum < objectNum)
+                generateObject();
             if (mapmode == 5)
                 for (int i = 1; i <= X; i++)
                     for (int j = 1; j <= Y; j++)
@@ -3191,7 +3191,7 @@ int main()
                         {
                             mp[i][j].tmp -= int(double(foglevel < 5 ? 10 : 50) * (1.0 - double(playerfh[mp[i][j].belong]) * 0.02));
                             if (mp[i][j].tmp <= 0)
-                                mp[i][j].tmp = mp[i][j].belong = 0, alivegennum--, mp[i][j].type = Empty_land;
+                                mp[i][j].tmp = mp[i][j].belong = 0, alivePlayerNum--, mp[i][j].type = Empty_land;
                         }
             if (mapmode == 5 && rm == dq)
             {
@@ -3202,13 +3202,13 @@ int main()
                             fog[i][j] = 1;
             }
             if (mapmode == 5)
-                for (int i = 1; i <= gennum; i++)
-                    if (blindtimeremain[i] > 0)
-                        blindtimeremain[i]--;
-                    else if (blindtimeremain[i] == 0)
-                        blindtimeremain[i] = -1;
-            if (mapmode == 5 && turn % kttime == 0)
-                spawnkt();
+                for (int i = 1; i <= playerNum; i++)
+                    if (blindTimeRemain[i] > 0)
+                        blindTimeRemain[i]--;
+                    else if (blindTimeRemain[i] == 0)
+                        blindTimeRemain[i] = -1;
+            if (mapmode == 5 && turn % ktTime == 0)
+                spawnKt();
             if (isPaint && turn)
             {
                 int tmp = -1;
@@ -3231,7 +3231,7 @@ int main()
             }
             if (mapmode == Pubg || mapmode == CFlag || mapmode == CPoints)
                 updateGrenade();
-            savemap();
+            saveMap();
             turn++;
             if (isPaint)
                 paintRemainTime--;
@@ -3240,7 +3240,7 @@ int main()
         {
             int maxLand = -1, playerLand[105];
             string winner = "";
-            for (int i = 1; i <= gennum; i++)
+            for (int i = 1; i <= playerNum; i++)
                 playerLand[i] = 0;
             for (int i = 1; i <= X; i++)
                 for (int j = 1; j <= Y; j++)
@@ -3253,7 +3253,7 @@ int main()
                     ;
             else
             {
-                for (int i = 1; i <= gennum; i++)
+                for (int i = 1; i <= playerNum; i++)
                     if (playerLand[i] == maxLand)
                         if (winner == "")
                             winner = "player" + myto_string(i);
@@ -3290,17 +3290,17 @@ int main()
         return 0;
     }
     if (mapmode == 7)
-        ifcanconvobject = true;
-    while (aliveteamnum > 1 && (!isPaint || isPaint && paintRemainTime > 0))
+        ifCanGenerateObject = true;
+    while (aliveTeamNum > 1 && (!isPaint || isPaint && paintRemainTime > 0))
     {
         if (isGMode)
-            playerGrenade[currentplayer] = 1;
+            playerGrenade[currentPlayer] = 1;
         rm = dq - turn % dq;
-        putmap(player[currentplayer].selectedx, player[currentplayer].selectedy, currentplayer);
+        putmap(player[currentPlayer].selectedx, player[currentPlayer].selectedy, currentPlayer);
         char inp = ' ';
         if (mapmode == 6 || mapmode == 7)
         {
-            for (int i = 1; i <= gennum; i++)
+            for (int i = 1; i <= playerNum; i++)
                 if (wd[i] > 0)
                     playerac[i] = 1000000, wd[i]--;
                 else if (wd[i] == 0)
@@ -3308,12 +3308,12 @@ int main()
         }
         if (mapmode == 5)
         {
-            if (ktremaintime > 0)
-                ktremaintime--;
-            if (ktremaintime == 0)
+            if (ktRemainTime > 0)
+                ktRemainTime--;
+            if (ktRemainTime == 0)
             {
-                getkt();
-                ktremaintime = -1;
+                getKt();
+                ktRemainTime = -1;
             }
         }
         bool ismouse = true;
@@ -3323,32 +3323,32 @@ int main()
         if (ismouse && KEY_DOWN(MOUSE_MOVED))
         {
             GetCursorPos(&p1);
-            int sp = int(round((double(p1.y) - double(xx1)) / dx)) + 1 + (X > 15 ? player[currentplayer].selectedx - 8 : 0);
-            int sq = int(round((double(p1.x) - double(yy1)) / dy)) + 1 + (Y > 15 ? player[currentplayer].selectedy - 8 : 0);
-            player[currentplayer].selectedx = sp;
-            player[currentplayer].selectedy = sq;
+            int sp = int(round((double(p1.y) - double(xx1)) / dx)) + 1 + (X > 15 ? player[currentPlayer].selectedx - 8 : 0);
+            int sq = int(round((double(p1.x) - double(yy1)) / dy)) + 1 + (Y > 15 ? player[currentPlayer].selectedy - 8 : 0);
+            player[currentPlayer].selectedx = sp;
+            player[currentPlayer].selectedy = sq;
             ismouse = false;
-            if (isHaveSend[currentplayer] && sight[currentplayer][sp][sq] && mp[sp][sq].type == Empty_land)
+            if (isHaveSend[currentPlayer] && sight[currentPlayer][sp][sq] && mp[sp][sq].type == Empty_land)
             {
                 for (int i = 1; i <= X; i++)
                     for (int j = 1; j <= Y; j++)
-                        if (mp[i][j].type == General && mp[i][j].belong == currentplayer)
+                        if (mp[i][j].type == General && mp[i][j].belong == currentPlayer)
                         {
                             swap(mp[i][j], mp[sp][sq]);
                             i = X + 1;
-                            isHaveSend[currentplayer] = false;
+                            isHaveSend[currentPlayer] = false;
                             break;
                         }
             }
-            else if (playerGrenade[currentplayer] > 0 && mp[sp][sq].type != Wall)
+            else if (playerGrenade[currentPlayer] > 0 && mp[sp][sq].type != Wall)
             {
                 for (int i = 1; i <= X; i++)
                     for (int j = 1; j <= Y; j++)
-                        if (mp[i][j].type == General && mp[i][j].belong == currentplayer)
+                        if (mp[i][j].type == General && mp[i][j].belong == currentPlayer)
                         {
-                            addGrenade(i, j, sp, sq, playerGrenade[currentplayer] * 20, currentplayer);
+                            addGrenade(i, j, sp, sq, playerGrenade[currentPlayer] * 20, currentPlayer);
                             i = X + 1;
-                            playerGrenade[currentplayer] = 0;
+                            playerGrenade[currentPlayer] = 0;
                             break;
                         }
             }
@@ -3378,16 +3378,16 @@ int main()
                 isMiniMap = false;
         }
         if (inp == 'Z')
-            player[currentplayer].halfselect ^= 1;
+            player[currentPlayer].halfselect ^= 1;
         else if (inp == 'F')
         {
             while (1)
             {
-                currentplayer = (currentplayer == gennum ? 1 : currentplayer + 1);
+                currentPlayer = (currentPlayer == playerNum ? 1 : currentPlayer + 1);
                 bool flag = false;
                 for (int i = 1; i <= X; i++)
                     for (int j = 1; j <= Y; j++)
-                        if (mp[i][j].type == General && mp[i][j].belong == currentplayer && mp[i][j].tmp > 0)
+                        if (mp[i][j].type == General && mp[i][j].belong == currentPlayer && mp[i][j].tmp > 0)
                         {
                             flag = true;
                             i = X + 1;
@@ -3397,16 +3397,16 @@ int main()
                     break;
             }
         }
-        for (int i = 1; i <= teamnum; i++)
+        for (int i = 1; i <= teamNum; i++)
             team[i].move(inp);
         for (int i = 1; i <= X; i++)
             for (int j = 1; j <= Y; j++)
             {
                 if (((mp[i][j].type == General || mp[i][j].type == 5) && mapmode != 5 && mapmode != 6 && mapmode != 7) || (mp[i][j].type == General && (mapmode == 5 || mapmode == 6 || mapmode == 7) && mp[i][j].tmp < playermaxhp[mp[i][j].belong]))
-                    mp[i][j].tmp += (mp[i][j].belong == bossID ? gennum - 1 : 1);
+                    mp[i][j].tmp += (mp[i][j].belong == bossID ? playerNum - 1 : 1);
                 else if (mp[i][j].type == Land && turn % 15 == 0)
-                    mp[i][j].tmp += (mp[i][j].belong == bossID ? gennum - 1 : 1);
-                for (int k = 1; k <= gennum; k++)
+                    mp[i][j].tmp += (mp[i][j].belong == bossID ? playerNum - 1 : 1);
+                for (int k = 1; k <= playerNum; k++)
                     sight[k][i][j] = false;
                 if ((mapmode == 5 || mapmode == 6 || mapmode == 7) && mp[i][j].type == General && mp[i][j].tmp > playermaxhp[mp[i][j].belong])
                     mp[i][j].tmp = playermaxhp[mp[i][j].belong];
@@ -3417,13 +3417,13 @@ int main()
                 {
                     for (int k = 1; k <= team[player[mp[i][j].belong].inteam].membernum; k++)
                         sight[team[player[mp[i][j].belong].inteam].members[k]->playerid][i][j] = true;
-                    if ((mapmode == 5 || mapmode == 6 || mapmode == 7) && blindtimeremain[mp[i][j].belong] > 0)
+                    if ((mapmode == 5 || mapmode == 6 || mapmode == 7) && blindTimeRemain[mp[i][j].belong] > 0)
                         continue;
                     if (mp[i][j].type == Points || mp[i][j].type == Flag || mp[i][j].type == Empty_flag)
                         continue;
-                    if ((mapmode == 5 || mapmode == 6 || mapmode == 7) && player[mp[i][j].belong].inteam == player[currentplayer].inteam)
-                        for (int k = i - 2 - ishavets[mp[i][j].belong]; k <= i + 2 + ishavets[mp[i][j].belong]; k++)
-                            for (int w = j - 2 - ishavets[mp[i][j].belong]; w <= j + 2 + ishavets[mp[i][j].belong]; w++)
+                    if ((mapmode == 5 || mapmode == 6 || mapmode == 7) && player[mp[i][j].belong].inteam == player[currentPlayer].inteam)
+                        for (int k = i - 2 - isHaveTs[mp[i][j].belong]; k <= i + 2 + isHaveTs[mp[i][j].belong]; k++)
+                            for (int w = j - 2 - isHaveTs[mp[i][j].belong]; w <= j + 2 + isHaveTs[mp[i][j].belong]; w++)
                                 if (k >= 1 && k <= X && w >= 1 && w <= Y)
                                     for (int p = 1; p <= team[player[mp[i][j].belong].inteam].membernum; p++)
                                         sight[team[player[mp[i][j].belong].inteam].members[p]->playerid][k][w] = true;
@@ -3437,7 +3437,7 @@ int main()
                                     sight[team[player[mp[i][j].belong].inteam].members[k]->playerid][px][py] = true;
                         }
                 }
-                else if (isGrenade[i][j] && Inteam[isGrenade[i][j]] == Inteam[currentplayer])
+                else if (isGrenade[i][j] && Inteam[isGrenade[i][j]] == Inteam[currentPlayer])
                     for (int k = i - 2; k <= i + 2; k++)
                         for (int w = j - 2; w <= j + 2; w++)
                             if (k >= 1 && k <= X && w >= 1 && w <= Y)
@@ -3445,22 +3445,22 @@ int main()
                                     sight[team[Inteam[isGrenade[i][j]]].members[p]->playerid][k][w] = true;
                             else
                                 ;
-        if (mp[player[currentplayer].selectedx][player[currentplayer].selectedy].belong != currentplayer)
+        if (mp[player[currentPlayer].selectedx][player[currentPlayer].selectedy].belong != currentPlayer)
             for (int i = 1; i <= X; i++)
                 for (int j = 1; j <= Y; j++)
-                    if (mp[i][j].type == General && mp[i][j].belong == currentplayer)
+                    if (mp[i][j].type == General && mp[i][j].belong == currentPlayer)
                     {
-                        player[currentplayer].selectedx = i;
-                        player[currentplayer].selectedy = j;
+                        player[currentPlayer].selectedx = i;
+                        player[currentPlayer].selectedy = j;
                         i = X + 1;
                         break;
                     }
-        if (rm == 1 && mapmode == 5 && aliveobjectnum < objectnum && aliveobjectnum < int(double(X * Y) * objectpr) && (!fvf || (fvf && foglevel % 3 == 0)))
-            convobject();
-        if ((mapmode == 6 || mapmode == 7) && ifcanconvobject && aliveobjectnum < objectnum)
+        if (rm == 1 && mapmode == 5 && aliveObjectNum < objectNum && aliveObjectNum < int(double(X * Y) * objectPr) && (!fvf || (fvf && foglevel % 3 == 0)))
+            generateObject();
+        if ((mapmode == 6 || mapmode == 7) && ifCanGenerateObject && aliveObjectNum < objectNum)
         {
-            ifcanconvobject = false;
-            convobject();
+            ifCanGenerateObject = false;
+            generateObject();
         }
         if (mapmode == 5)
             for (int i = 1; i <= X; i++)
@@ -3469,7 +3469,7 @@ int main()
                     {
                         mp[i][j].tmp -= int(double(foglevel < 5 ? 10 : 50) * (1.0 - double(playerfh[mp[i][j].belong]) * 0.02));
                         if (mp[i][j].tmp <= 0)
-                            mp[i][j].tmp = mp[i][j].belong = 0, alivegennum--, mp[i][j].type = Empty_land;
+                            mp[i][j].tmp = mp[i][j].belong = 0, alivePlayerNum--, mp[i][j].type = Empty_land;
                     }
         if (mapmode == 5 && rm == dq)
         {
@@ -3480,10 +3480,10 @@ int main()
                         fog[i][j] = 1;
         }
         if (mapmode != 6 && mapmode != 7)
-            for (int i = 1; i <= teamnum; i++)
+            for (int i = 1; i <= teamNum; i++)
             {
                 bool ok = false;
-                if (teamdead[i])
+                if (teamDead[i])
                     continue;
                 for (int j = 1; j <= X; j++)
                     for (int k = 1; k <= Y; k++)
@@ -3494,7 +3494,7 @@ int main()
                             break;
                         }
                 if (!ok)
-                    aliveteamnum--, teamdead[i] = 1;
+                    aliveTeamNum--, teamDead[i] = 1;
             }
         if (mapmode == 6 || mapmode == 7)
         {
@@ -3509,8 +3509,8 @@ int main()
             if (mapmode == 6)
             {
                 string opt = "";
-                for (int i = 1; i <= teamnum; i++)
-                    if (flagscore[i] >= 10)
+                for (int i = 1; i <= teamNum; i++)
+                    if (flagScore[i] >= 10)
                     {
                         if (opt == "")
                             opt += "team" + myto_string(i);
@@ -3529,15 +3529,15 @@ int main()
             }
         }
         if (mapmode == 5 || mapmode == 6 || mapmode == 7)
-            for (int i = 1; i <= gennum; i++)
-                if (blindtimeremain[i] > 0)
-                    blindtimeremain[i]--;
-                else if (blindtimeremain[i] == 0)
-                    blindtimeremain[i] = -1;
+            for (int i = 1; i <= playerNum; i++)
+                if (blindTimeRemain[i] > 0)
+                    blindTimeRemain[i]--;
+                else if (blindTimeRemain[i] == 0)
+                    blindTimeRemain[i] = -1;
         bool isget = false;
         for (int i = 1; i <= X; i++)
             for (int j = 1; j <= Y; j++)
-                if (mp[i][j].belong == currentplayer && mp[i][j].tmp > 0)
+                if (mp[i][j].belong == currentPlayer && mp[i][j].tmp > 0)
                 {
                     isget = true;
                     i = X + 1;
@@ -3545,14 +3545,14 @@ int main()
                 }
         if (!isget)
         {
-            isgz = true;
+            isGz = true;
             while (1)
             {
-                currentplayer = (currentplayer == gennum ? 1 : currentplayer + 1);
+                currentPlayer = (currentPlayer == playerNum ? 1 : currentPlayer + 1);
                 bool flag = false;
                 for (int i = 1; i <= X; i++)
                     for (int j = 1; j <= Y; j++)
-                        if (mp[i][j].type == General && mp[i][j].belong == currentplayer && mp[i][j].tmp > 0)
+                        if (mp[i][j].type == General && mp[i][j].belong == currentPlayer && mp[i][j].tmp > 0)
                         {
                             flag = true;
                             i = X + 1;
@@ -3562,20 +3562,20 @@ int main()
                     break;
             }
         }
-        if (mapmode == 5 && turn % kttime == 0)
-            spawnkt();
+        if (mapmode == 5 && turn % ktTime == 0)
+            spawnKt();
         if (mapmode == 7)
         {
-            for (int i = 1; i <= teamnum; i++)
+            for (int i = 1; i <= teamNum; i++)
                 teampointsmatchland[i] = 0;
             for (int i = 1; i <= X; i++)
                 for (int j = 1; j <= Y; j++)
                     if (mp[i][j].type == 20 && mp[i][j].belong != 0)
                         teampointsmatchland[mp[i][j].belong]++;
-            for (int i = 1; i <= teamnum; i++)
+            for (int i = 1; i <= teamNum; i++)
                 teampointsmatchscore[i] += teampointsmatchland[i];
             string opt = "";
-            for (int i = 1; i <= teamnum; i++)
+            for (int i = 1; i <= teamNum; i++)
                 if (teampointsmatchscore[i] >= 1000)
                 {
                     if (opt == "")
@@ -3620,10 +3620,10 @@ int main()
                                 mp[i][j].belong = 0;
                             }
                         }
-                        if (foundplayer && !foundenemy && mp[i][j].tmp < pointstime)
+                        if (foundplayer && !foundenemy && mp[i][j].tmp < pointsTime)
                             mp[i][j].tmp++;
                     }
-                    else if (mp[i][j].type == 20 && mp[i][j].belong == 0 && mp[i][j].tmp < pointstime)
+                    else if (mp[i][j].type == 20 && mp[i][j].belong == 0 && mp[i][j].tmp < pointsTime)
                     {
                         int playerteam = -1;
                         bool sameteam = true;
@@ -3646,15 +3646,15 @@ int main()
                         if (sameteam && playerteam != -1)
                         {
                             mp[i][j].tmp++;
-                            if (mp[i][j].tmp >= pointstime)
+                            if (mp[i][j].tmp >= pointsTime)
                             {
                                 news[newsr].a = playerteam;
                                 news[newsr].opt = 4;
                                 news[newsr].remtime = 50;
                                 newsr++;
-                                mp[i][j].tmp = pointstime;
+                                mp[i][j].tmp = pointsTime;
                                 mp[i][j].belong = playerteam;
-                                ifcanconvobject = true;
+                                ifCanGenerateObject = true;
                             }
                         }
                     }
@@ -3662,7 +3662,7 @@ int main()
         }
         if (mapmode == Pubg || mapmode == CFlag || mapmode == CPoints)
             updateGrenade();
-        savemap();
+        saveMap();
         turn++;
         if (isPaint)
             paintRemainTime--;
@@ -3671,7 +3671,7 @@ int main()
     {
         int maxLand = -1, teamLand[105];
         string winner = "";
-        for (int i = 1; i <= teamnum; i++)
+        for (int i = 1; i <= teamNum; i++)
             teamLand[i] = 0;
         for (int i = 1; i <= X; i++)
             for (int j = 1; j <= Y; j++)
@@ -3684,7 +3684,7 @@ int main()
                 ;
         else
         {
-            for (int i = 1; i <= teamnum; i++)
+            for (int i = 1; i <= teamNum; i++)
                 if (teamLand[i] == maxLand)
                     if (winner == "")
                         winner = "team" + myto_string(i);
