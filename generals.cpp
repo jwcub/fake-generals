@@ -655,8 +655,8 @@ void Setcolor(int ForeColor = 15, int BackGroundColor = 0)
     SetConsoleTextAttribute(hCon, ForeColor | BackGroundColor);
     return;
 }
-int cls[13] = {13, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12};
-int clsNum = 13;
+int cls[12] = {13, 1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 14};
+int clsNum = 12;
 int foglevel;
 struct News
 {
@@ -1047,6 +1047,10 @@ void putmap(int sx, int sy, int id)
                 if (sx == i && sy == j && !(mapmode == Pubg || mapmode == CFlag || mapmode == CPoints))
                 {
                     SetColor(0xc, 0, 1);
+                    if (turn % 2 == 0)
+                    {
+                        SetColor(0xf, 0, 1);
+                    }
                     if (curMap.mp[i][j].type == Empty_land)
                     {
                         if (isKt[i][j])
@@ -1144,7 +1148,9 @@ void putmap(int sx, int sy, int id)
                                 Setcolor();
                             }
                             else
+                            {
                                 printf("    ");
+                            }
                         }
                         else
                         {
