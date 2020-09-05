@@ -3452,9 +3452,9 @@ int main()
             for (int j = 1; j <= Y; j++)
             {
                 if (((curMap.mp[i][j].type == General || curMap.mp[i][j].type == 5) && mapmode != 5 && mapmode != 6 && mapmode != 7) || (curMap.mp[i][j].type == General && (mapmode == 5 || mapmode == 6 || mapmode == 7) && curMap.mp[i][j].tmp < playermaxhp[curMap.mp[i][j].belong]))
-                    curMap.mp[i][j].tmp += (curMap.mp[i][j].belong == bossID ? playerNum - 1 : 1);
+                    curMap.mp[i][j].tmp += (curMap.mp[i][j].belong == bossID && curMap.mp[i][j].type == General ? playerNum - 1 : 1);
                 else if (curMap.mp[i][j].type == Land && turn % 15 == 0)
-                    curMap.mp[i][j].tmp += (curMap.mp[i][j].belong == bossID ? playerNum - 1 : 1);
+                    curMap.mp[i][j].tmp += 1;
                 for (int k = 1; k <= playerNum; k++)
                     sight[k][i][j] = false;
                 if ((mapmode == 5 || mapmode == 6 || mapmode == 7) && curMap.mp[i][j].type == General && curMap.mp[i][j].tmp > playermaxhp[curMap.mp[i][j].belong])
