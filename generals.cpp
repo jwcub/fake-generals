@@ -2445,11 +2445,11 @@ void commandLine()
         }
         else if (tmp[1] == "makeselect")
         {
-            if (tot != 3)
+            if (tot != 4)
                 cout << "SyntaxError";
             else
             {
-                int px, py;
+                int px, py, pid;
                 if (tmp[2] == "~")
                     px = player[currentPlayer].selectedx;
                 else
@@ -2462,10 +2462,18 @@ void commandLine()
                 {
                     py = myto_int(tmp[3]);
                 }
-                if (px >= 1 && px <= X && py >= 1 && py <= Y && mp[px][py].belong == currentPlayer)
+                if (tmp[4] == "~")
+                    pid = currentPlayer;
+                else
                 {
-                    player[currentPlayer].selectedx = px;
-                    player[currentPlayer].selectedy = py;
+                    pid = myto_int(tmp[4]);
+                }
+                if (pid == 0)
+                    pid = getRandomAlivePlayer();
+                if (px >= 1 && px <= X && py >= 1 && py <= Y && mp[px][py].belong == pid)
+                {
+                    player[pid].selectedx = px;
+                    player[pid].selectedy = py;
                 }
                 else
                     cout << "ValueError";
@@ -2490,7 +2498,10 @@ void commandLine()
                 {
                     py = myto_int(tmp[3]);
                 }
-                k = myto_int(tmp[4]);
+                if (tmp[4] == "~")
+                    k = currentPlayer;
+                else
+                    k = myto_int(tmp[4]);
                 if (px >= 1 && px <= X && py >= 1 && py <= Y)
                 {
                     if (tmp[1] == "setbelong" && k >= 0 && k <= playerNum)
@@ -2517,7 +2528,10 @@ void commandLine()
             else
             {
                 int a, b;
-                a = myto_int(tmp[2]);
+                if (tmp[2] == "~")
+                    a = currentPlayer;
+                else
+                    a = myto_int(tmp[2]);
                 if (a == 0)
                     a = getRandomAlivePlayer();
                 else if (a < 1 || a > playerNum || !isAlive(a))
@@ -2538,7 +2552,10 @@ void commandLine()
                 }
                 else if (tot == 3)
                 {
-                    b = myto_int(tmp[3]);
+                    if (tmp[3] == "~")
+                        b = currentPlayer;
+                    else
+                        b = myto_int(tmp[3]);
                     if (b == 0)
                         b = getRandomAlivePlayer();
                     else if (b < 1 || b > playerNum || a == b || !isAlive(b))
@@ -2634,6 +2651,10 @@ void commandLine()
                     pid = currentPlayer;
                 else
                     pid = myto_int(tmp[4]);
+                if (pid == 0)
+                {
+                    pid = getRandomAlivePlayer();
+                }
                 if (tot == 5)
                 {
                     if (pid < 1 || pid > playerNum)
