@@ -2617,6 +2617,62 @@ void commandLine()
             system("cls");
             putmap(player[currentPlayer].selectedx, player[currentPlayer].selectedy, currentPlayer);
         }
+        else if (tmp[1] == "setview")
+        {
+            if (tot == 4 || tot == 5)
+            {
+                int xx1, yy1, pid;
+                if (tmp[2] == "~")
+                    xx1 = player[currentPlayer].selectedx;
+                else
+                    xx1 = myto_int(tmp[2]);
+                if (tmp[3] == "~")
+                    yy1 = player[currentPlayer].selectedy;
+                else
+                    yy1 = myto_int(tmp[3]);
+                if (tmp[4] == "~")
+                    pid = currentPlayer;
+                else
+                    pid = myto_int(tmp[4]);
+                if (tot == 5)
+                {
+                    if (pid < 1 || pid > playerNum)
+                    {
+                        cout << "ValueError";
+                    }
+                    else if (tmp[5] == "-a")
+                    {
+                        for (int i = 1; i <= X; i++)
+                            for (int j = 1; j <= Y; j++)
+                            {
+                                sight[pid][i][j] = true;
+                            }
+                    }
+                    else if (tmp[5] == "-A")
+                    {
+                        for (int i = 1; i <= X; i++)
+                            for (int j = 1; j <= Y; j++)
+                            {
+                                sight[pid][i][j] = false;
+                            }
+                    }
+                    else
+                    {
+                        cout << "SyntaxError";
+                    }
+                }
+                if (xx1 < 1 || xx1 > X || yy1 < 1 || yy1 > Y || pid < 1 || pid > playerNum)
+                    cout << "ValueError";
+                else
+                {
+                    sight[pid][xx1][yy1] ^= 1;
+                }
+            }
+            else
+            {
+                cout << "SyntaxError";
+            }
+        }
         else
         {
             cout << "Undefined";
