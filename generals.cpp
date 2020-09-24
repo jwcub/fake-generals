@@ -62,7 +62,8 @@ enum land_type
     Exfh,
     Points,
     Send,
-    Grrenade
+    Grrenade,
+    Door
 };
 enum game_mode
 {
@@ -83,7 +84,8 @@ enum map_mode
     CFlag,
     CPoints,
     Paint,
-    Qianhao
+    Qianhao,
+    Chess
 };
 enum Movement
 {
@@ -137,6 +139,7 @@ int paintRemainTime;
 bool isHaveSend[105];
 int turn = 1;
 int currentPlayer = 1;
+bool isChess;
 int randnum(int l, int r)
 {
     return rand() % (r - l + 1) + l;
@@ -150,6 +153,16 @@ bool isGz;
 bool opt;
 bool isBoss;
 int bossID;
+struct doorPos
+{
+    int x, y;
+};
+vector<doorPos> doors;
+void addDoor(int x, int y)
+{
+    doors.push_back((doorPos){x, y});
+    return;
+}
 void gotoxy(int x, int y)
 {
     CONSOLE_SCREEN_BUFFER_INFO csbiInfo;
@@ -178,6 +191,13 @@ int myto_int(string s)
             flag *= -1;
         else if (isdigit(s[i]))
             ans = ans * 10 + (s[i] - '0');
+        else
+        {
+            cout << "致命错误：无法将" << s << "转换为数字。\n";
+            system("pause");
+            exit(0);
+        }
+        
     return ans * flag;
 }
 int order[105];
@@ -567,6 +587,30 @@ void generateQianHaoMap() //https://github.com/By-Ha/Checkmate/pull/15/files
             }
     return;
 }
+void generateChessMap()
+{
+    bool pre = true;
+    X -= X % 5;
+    Y -= Y % 5;
+    for (int i = 1; i <= X; i += 5)
+        for (int j = 1; j <= Y; j += 5)
+        {
+            if (pre)
+            {
+                mp[i + 2][j + 2].type = Door;
+                addDoor(i + 2, j + 2);
+            }
+            else
+            {
+                for (int p = i; p < i + 5; p++)
+                    for (int q = j; q < j + 5; q++)
+                        mp[p][q].type = Wall;
+            }
+            pre = !pre;
+        }
+    generatePlayer();
+    return;
+}
 void generateMap(map_mode mpm)
 {
     mapmode = mpm;
@@ -619,6 +663,12 @@ void generateMap(map_mode mpm)
     else if (mpm == Qianhao)
     {
         generateQianHaoMap();
+    }
+    else if (mpm == Chess)
+    {
+        generateChessMap();
+        isChess = true;
+        mapmode = Pubg;
     }
     return;
 }
@@ -1456,6 +1506,12 @@ void putmap(int sx, int sy, int id)
                             Setcolor();
                         }
                     }
+                    else if (mp[i][j].type == Door)
+                    {
+                        SetColor(cls[randnum(0, clsNum - 1)], 0, 100);
+                        printf("(**)");
+                        Setcolor();
+                    }
                 }
             }
             if (fog[i][j])
@@ -1633,10 +1689,10 @@ void putmap(int sx, int sy, int id)
     }
     if (mapmode == 5 || mapmode == 6 || mapmode == 7)
     {
-        if (mapmode == 5)
+        if (mapmode == 5 && !isChess)
             printf("毒圈还有 %d 回合扩散\n", rm);
         printf("当前玩家拥有的物品：剑%d， 护盾%d， 防毒面具%d， 手雷%d\n", playeratk[id], playerac[id], playerfh[id], playerGrenade[id]);
-        if (ktRemainTime > 0)
+        if (ktRemainTime > 0 && !isChess)
             printf("空投还有 %d 回合落地\n", ktRemainTime);
         if (mapmode == 6 || mapmode == 7)
         {
@@ -1809,6 +1865,11 @@ struct Player
             {
                 int dmg1 = max(0, int(double(dp->tmp) * (1.0 + double(playeratk[playerid]) / 10.0) - double(playerac[dt->belong]) * 10.0));
                 int dmg2 = max(0, int(double(dt->tmp) * (1.0 + double(playeratk[dt->belong]) / 10.0) - double(playerac[playerid]) * 10.0));
+                if (isChess)
+                {
+                    dmg1 /= 4;
+                    dmg2 /= 4;
+                }
                 dp->tmp -= dmg2;
                 dt->tmp -= dmg1;
                 if (dp->tmp <= 0 && mapmode != 6 && mapmode != 7)
@@ -1872,6 +1933,23 @@ struct Player
                 }
                 else if (dt->type == 10)
                     return;
+                if (dt->type == Door)
+                {
+                    int ps = randnum(0, doors.size() - 1);
+                    int ex, ey, tryTime = 0;
+                    do
+                    {
+                        ex = doors[ps].x + randnum(-2, 2);
+                        ey = doors[ps].y + randnum(-2, 2);
+                        tryTime++;
+                    } while (mp[ex][ey].type != Empty_land && tryTime < 10);
+                    if (tryTime >= 10)
+                        return;
+                    swap(mp[selectedx][selectedy], mp[ex][ey]);
+                    selectedx = ex;
+                    selectedy = ey;
+                    return;
+                }
                 swap(*dt, *dp);
             }
             *opt += tmp;
@@ -2852,7 +2930,7 @@ int main()
         }
         while (1)
         {
-            printf("选择地图：1 = 随机地图， 2 = 空白地图， 3 = 迷宫地图， 4 = 端午地图， 5  = 吃鸡地图， 6 = 夺旗地图， 7 = 占点地图， 8 = 涂色地图，\n9 = 堑壕地图\n");
+            printf("选择地图：1 = 随机地图， 2 = 空白地图， 3 = 迷宫地图， 4 = 端午地图， 5  = 吃鸡地图， 6 = 夺旗地图， 7 = 占点地图， 8 = 涂色地图，\n9 = 堑壕地图， 10 = 棋盘地图\n");
             scanf("%d", &mapmode);
             if (mode == 1 && mapmode == 6)
             {
@@ -2874,7 +2952,7 @@ int main()
                 printf("抱歉，占点地图不支持Boss模式。\n");
                 continue;
             }
-            if (mapmode == 1 || mapmode == 2 || mapmode == 3 || mapmode == 4 || mapmode == 5 || mapmode == 6 || mapmode == 7 || mapmode == 8 || mapmode == 9)
+            if (mapmode == 1 || mapmode == 2 || mapmode == 3 || mapmode == 4 || mapmode == 5 || mapmode == 6 || mapmode == 7 || mapmode == 8 || mapmode == 9 || mapmode == 10)
                 break;
         }
         int ifown;
@@ -3309,7 +3387,7 @@ int main()
                             if (mp[i][j].tmp <= 0)
                                 mp[i][j].tmp = mp[i][j].belong = 0, alivePlayerNum--, mp[i][j].type = Empty_land;
                         }
-            if (mapmode == 5 && rm == dq)
+            if (mapmode == 5 && rm == dq && !isChess)
             {
                 foglevel++;
                 for (int i = foglevel; i <= X - foglevel + 1; i++)
@@ -3323,7 +3401,7 @@ int main()
                         blindTimeRemain[i]--;
                     else if (blindTimeRemain[i] == 0)
                         blindTimeRemain[i] = -1;
-            if (mapmode == 5 && turn % ktTime == 0)
+            if (mapmode == 5 && turn % ktTime == 0 && !isChess)
                 spawnKt();
             if (isPaint && turn)
             {
@@ -3422,7 +3500,7 @@ int main()
                 else if (wd[i] == 0)
                     playerac[i] = 0, wd[i] = -1;
         }
-        if (mapmode == 5)
+        if (mapmode == 5 && !isChess)
         {
             if (ktRemainTime > 0)
                 ktRemainTime--;
@@ -3578,7 +3656,7 @@ int main()
             ifCanGenerateObject = false;
             generateObject();
         }
-        if (mapmode == 5)
+        if (mapmode == 5 && !isChess)
             for (int i = 1; i <= X; i++)
                 for (int j = 1; j <= Y; j++)
                     if (fog[i][j] && mp[i][j].type == General && mp[i][j].tmp >= 1)
@@ -3587,7 +3665,7 @@ int main()
                         if (mp[i][j].tmp <= 0)
                             mp[i][j].tmp = mp[i][j].belong = 0, alivePlayerNum--, mp[i][j].type = Empty_land;
                     }
-        if (mapmode == 5 && rm == dq)
+        if (mapmode == 5 && rm == dq && !isChess)
         {
             foglevel++;
             for (int i = foglevel; i <= X - foglevel + 1; i++)
