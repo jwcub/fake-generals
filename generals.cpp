@@ -3910,4 +3910,5 @@ int main()
     else if (MessageBox(NULL, "没有队伍胜利。是否保存回放？", "欢呼", MB_OKCANCEL) == IDOK)
         savereplay();
     return 0;
+    
 }
