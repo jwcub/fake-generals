@@ -901,7 +901,13 @@ void printCurrentMiniMap(int bgmp, int id)
     for (int j = int(double(startingY - 1) / ydivs) + 1; j <= int(double(endingY - 1) / ydivs) + 1; j++)
     {
         if (sm[bgmp][j] == 200)
-            SetColor(0xc, 0, 1);
+        {
+            #ifdef _WIN32
+            SetColor(0xc, 0xc, 1);
+            #else
+            SetColor(F_RED, 0, 1);
+            #endif
+        }
         else if (sm[bgmp][j] == 100)
         {
             if ((mapmode == CFlag || mapmode == CPoints) || (mapmode == Pubg && fvf))
@@ -914,7 +920,13 @@ void printCurrentMiniMap(int bgmp, int id)
         else if (sm[bgmp][j] == -2)
             Setcolor();
         else if (sm[bgmp][j] == -1)
+        {
+            #ifdef _WIN32
             SetColor(0xd, 0xd, 2);
+            #else
+            SetColor(F_PURPLE, 0, 2);
+            #endif
+        }
         else
             SetColor(colors[sm[bgmp][j]], 0, 1);
         printf("%c ", miniMap[bgmp][j]);
@@ -959,7 +971,7 @@ void putmap(int sx, int sy, int id)
                 {
                     currentBlock = '!';
                     if (ktRemainTime % 2 == 0)
-                        currentSM = 20;
+                        currentSM = 200;
                     else
                     {
                         currentSM = -2;
