@@ -3080,6 +3080,7 @@ int main()
     system("pause");
     system("cls");
 #endif
+    starting = false;
     while (1)
     {
         printf("1 = 正常游戏， 2 = 播放回放\n");
