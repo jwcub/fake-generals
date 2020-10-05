@@ -1,6 +1,8 @@
 #include <iostream>
+#ifdef _WIN32
 #include <windows.h>
 #include <conio.h>
+#endif
 #include <string>
 #include <cstring>
 #include <ctime>
@@ -16,7 +18,16 @@
 #include <cmath>
 #include <sstream>
 #include <fstream>
+#ifdef _WIN32
 #define KEY_DOWN(VK_NONAME) ((GetAsyncKeyState(VK_NONAME) & 0x8000) ? 1 : 0)
+#else
+#define KEY_DOWN(VK_NONAME) 0
+#include <unistd.h>
+#define Sleep(SLEEP_TIME) sleep(SLEEP_TIME)
+#define MessageBox(msgA, msgB, msgC, msgD) 998244353
+#define IDOK 114514
+#define cls clear
+#endif
 using std::cin;
 using std::cout;
 using std::endl;
@@ -165,6 +176,7 @@ void addDoor(int x, int y)
 }
 void gotoxy(int x, int y)
 {
+#ifdef _WIN32
     CONSOLE_SCREEN_BUFFER_INFO csbiInfo;
     HANDLE hConsoleOut;
     hConsoleOut = GetStdHandle(STD_OUTPUT_HANDLE);
@@ -172,6 +184,7 @@ void gotoxy(int x, int y)
     csbiInfo.dwCursorPosition.X = x;
     csbiInfo.dwCursorPosition.Y = y;
     SetConsoleCursorPosition(hConsoleOut, csbiInfo.dwCursorPosition);
+#endif
     return;
 }
 string myto_string(int x)
@@ -197,7 +210,7 @@ int myto_int(string s)
             system("pause");
             exit(0);
         }
-        
+
     return ans * flag;
 }
 int order[105];
@@ -673,6 +686,7 @@ void generateMap(map_mode mpm)
     return;
 }
 int nowpri;
+#ifdef _WIN32
 void SetColor(int ForeColor, int BackGroundColor, int pri)
 {
     if (nowpri != 0 && pri < nowpri)
@@ -689,8 +703,57 @@ void Setcolor(int ForeColor = 15, int BackGroundColor = 0)
     SetConsoleTextAttribute(hCon, ForeColor | BackGroundColor);
     return;
 }
-int cls[12] = {13, 1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 14};
-int clsNum = 12;
+int colors[12] = {13, 1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 14};
+int colorsNum = 12;
+#else
+const int F_BLACK = 0x01;  // 000001
+const int F_RED = 0x02;    // 000010
+const int F_GREEN = 0x03;  // 000011
+const int F_YELLOW = 0x04; // 000100
+const int F_BLUE = 0x05;   // 000101
+const int F_PURPLE = 0x06; // 000110
+const int F_WHITE = 0x07;
+int colors[7] = {1, 2, 3, 4, 5, 6, 7};
+int colorsNum = 7;
+void SetColor(int ForeColor = 7, int BackGroundColor = 0, int pri = 0) //https://blog.csdn.net/hn_tzy/article/details/92565047
+{
+    int fore = ForeColor;
+    if (nowpri != 0 && pri < nowpri)
+        return;
+    nowpri = pri;
+    switch (fore)
+    {
+    case F_BLACK:
+        printf("\033[30m");
+        break;
+    case F_RED:
+        printf("\033[31m");
+        break;
+    case F_GREEN:
+        printf("\033[32m");
+        break;
+    case F_YELLOW:
+        printf("\033[33m");
+        break;
+    case F_BLUE:
+        printf("\033[34m");
+        break;
+    case F_PURPLE:
+        printf("\033[35m");
+        break;
+    case F_WHITE:
+        printf("\033[37m");
+        break;
+    }
+    return;
+}
+void Setcolor()
+{
+    printf("\033[39m");
+    nowpri = 0;
+    return;
+}
+#endif
 int foglevel;
 struct News
 {
@@ -701,13 +764,13 @@ void printPlayer(int id, bool isTeam = true)
 {
     if (isTeam)
     {
-        SetColor(cls[Inteam[id] % clsNum], 0, 100);
+        SetColor(colors[Inteam[id] % colorsNum], 0, 100);
         printf("player%d", id);
         Setcolor();
     }
     else
     {
-        SetColor(cls[id % clsNum], 0, 100);
+        SetColor(colors[id % colorsNum], 0, 100);
         printf("player%d", id);
         Setcolor();
     }
@@ -715,7 +778,7 @@ void printPlayer(int id, bool isTeam = true)
 }
 void printTeam(int id)
 {
-    SetColor(cls[id % clsNum], 0, 100);
+    SetColor(colors[id % colorsNum], 0, 100);
     printf("team%d", id);
     Setcolor();
     return;
@@ -842,18 +905,18 @@ void printCurrentMiniMap(int bgmp, int id)
         else if (sm[bgmp][j] == 100)
         {
             if ((mapmode == CFlag || mapmode == CPoints) || (mapmode == Pubg && fvf))
-                SetColor(cls[Inteam[id] % clsNum], 0, 1);
+                SetColor(colors[Inteam[id] % colorsNum], 0, 1);
             else
-                SetColor(cls[id % clsNum], 0, 1);
+                SetColor(colors[id % colorsNum], 0, 1);
         }
         else if (sm[bgmp][j] == 19)
-            SetColor(cls[id % clsNum], 0, 1);
+            SetColor(colors[id % colorsNum], 0, 1);
         else if (sm[bgmp][j] == -2)
             Setcolor();
         else if (sm[bgmp][j] == -1)
             SetColor(0xd, 0xd, 2);
         else
-            SetColor(cls[sm[bgmp][j]], 0, 1);
+            SetColor(colors[sm[bgmp][j]], 0, 1);
         printf("%c ", miniMap[bgmp][j]);
         Setcolor();
     }
@@ -907,7 +970,7 @@ void putmap(int sx, int sy, int id)
                     if (currentBlock != '!')
                     {
                         if (mp[i][j].belong)
-                            currentSM = mp[i][j].belong % clsNum;
+                            currentSM = mp[i][j].belong % colorsNum;
                         currentBlock = '+';
                     }
                 }
@@ -915,7 +978,7 @@ void putmap(int sx, int sy, int id)
                 {
                     if (currentBlock != '!')
                     {
-                        currentSM = ifgetflag[mp[i][j].belong] % clsNum;
+                        currentSM = ifgetflag[mp[i][j].belong] % colorsNum;
                         currentBlock = '+';
                     }
                 }
@@ -925,9 +988,9 @@ void putmap(int sx, int sy, int id)
                     {
                         currentBlock = 'X';
                         // if ((mapmode == CFlag || mapmode == CPoints) || (mapmode == Pubg && fvf))
-                        //     currentSM = Inteam[mp[i][j].belong] % clsNum;
+                        //     currentSM = Inteam[mp[i][j].belong] % colorsNum;
                         // else
-                        //     currentSM = mp[i][j].belong % clsNum;
+                        //     currentSM = mp[i][j].belong % colorsNum;
                         currentSM = max(currentSM, 100);
                     }
                 }
@@ -942,9 +1005,9 @@ void putmap(int sx, int sy, int id)
                         if (mp[i][j].belong == id)
                             currentSM = max(currentSM, 100);
                         if ((mapmode == CFlag || mapmode == CPoints) || (mapmode == Pubg && fvf))
-                            currentSM = max(currentSM, Inteam[mp[i][j].belong] % clsNum);
+                            currentSM = max(currentSM, Inteam[mp[i][j].belong] % colorsNum);
                         else
-                            currentSM = max(currentSM, mp[i][j].belong % clsNum);
+                            currentSM = max(currentSM, mp[i][j].belong % colorsNum);
                     }
                 }
                 if (i == sx && j == sy && sx != 0 && sy != 0)
@@ -975,7 +1038,11 @@ void putmap(int sx, int sy, int id)
             for (int j = int(double(startingY - 1) / ydivs) + 1; j <= int(double(endingY - 1) / ydivs) + 1; j++)
                 miniMap[i][j] = ' ';
     }
+#ifdef _WIN32
     gotoxy(0, 0);
+#else
+    system("clear");
+#endif
     memset(score, 0, sizeof(score));
     if (!sight[id][sx][sy])
         sx = sy = 0;
@@ -1064,14 +1131,20 @@ void putmap(int sx, int sy, int id)
                     printf(" "), lineprinted = true;
             }
             if (fog[i][j])
+            {
+#ifdef _WIN32
                 SetColor(0xd, 0xd, 2);
+#else
+                SetColor(F_PURPLE, 0, 2);
+#endif
+            }
             if (isGrenade[i][j])
             {
                 if ((mapmode == 7 || mapmode == 6) && mode == Tdm || mapmode == Pubg && fvf)
-                    SetColor(cls[Inteam[isGrenade[i][j]] % clsNum], 0, 100);
+                    SetColor(colors[Inteam[isGrenade[i][j]] % colorsNum], 0, 100);
                 else
                 {
-                    SetColor(cls[isGrenade[i][j] % clsNum], 0, 100);
+                    SetColor(colors[isGrenade[i][j] % colorsNum], 0, 100);
                 }
                 printf("<G> ");
                 Setcolor();
@@ -1080,10 +1153,18 @@ void putmap(int sx, int sy, int id)
             {
                 if (sx == i && sy == j && !(mapmode == Pubg || mapmode == CFlag || mapmode == CPoints))
                 {
-                    SetColor(0xc, 0, 1);
+#ifdef _WIN32
+                    SetColor(0xc, 0xc, 100);
+#else
+                    SetColor(F_RED, 0, 100);
+#endif
                     if (turn % 2 == 0)
                     {
-                        SetColor(0xf, 0, 1);
+#ifdef _WIN32
+                        SetColor(0xf, 0xf, 200);
+#else
+                        SetColor(F_WHITE, 0, 200);
+#endif
                     }
                     if (mp[i][j].type == Empty_land)
                     {
@@ -1107,7 +1188,11 @@ void putmap(int sx, int sy, int id)
                         else
                         {
                             if ((mapmode == 7 || mapmode == 6) && mode == Tdm || mapmode == Pubg && fvf)
-                                SetColor(cls[Inteam[mp[i][j].belong] % clsNum], 0, 100);
+                                SetColor(colors[Inteam[mp[i][j].belong] % colorsNum], 0, 100);
+                            else
+                            {
+                                SetColor(colors[mp[i][j].belong % colorsNum], 0, 100);
+                            }
                             printf("{");
                             getnum(mp[i][j].tmp);
                             printf("}");
@@ -1177,7 +1262,11 @@ void putmap(int sx, int sy, int id)
                         {
                             if (isHaveSend[id] && sight[id][i][j])
                             {
-                                SetColor(6, 0, 20000);
+#ifdef _WIN32
+                                SetColor(6, 0, 2000);
+#else
+                                SetColor(F_YELLOW, 0, 2000);
+#endif
                                 printf("████");
                                 Setcolor();
                             }
@@ -1188,7 +1277,11 @@ void putmap(int sx, int sy, int id)
                         }
                         else
                         {
-                            SetColor(15, 0, 1);
+#ifdef _WIN32
+                            SetColor(0xf, 0xf, 1);
+#else
+                            SetColor(F_WHITE, 0, 1);
+#endif
                             printf("████");
                             Setcolor();
                         }
@@ -1204,7 +1297,7 @@ void putmap(int sx, int sy, int id)
                     {
                         if (ifgetflag[mp[i][j].belong])
                         {
-                            SetColor(cls[Inteam[mp[i][j].belong] % clsNum], 0, 100);
+                            SetColor(colors[Inteam[mp[i][j].belong] % colorsNum], 0, 100);
                             printf("<");
                             getnum(mp[i][j].tmp);
                             printf(">");
@@ -1212,9 +1305,9 @@ void putmap(int sx, int sy, int id)
                         }
                         else if (sight[id][i][j])
                         {
-                            SetColor(cls[mp[i][j].belong % clsNum], 0, 1);
+                            SetColor(colors[mp[i][j].belong % colorsNum], 0, 1);
                             if ((mapmode == CFlag || mapmode == CPoints) && mode == Tdm || mapmode == Pubg && fvf)
-                                SetColor(cls[Inteam[mp[i][j].belong] % clsNum], 0, 100);
+                                SetColor(colors[Inteam[mp[i][j].belong] % colorsNum], 0, 100);
                             printf("{");
                             getnum(mp[i][j].tmp);
                             printf("}");
@@ -1228,7 +1321,11 @@ void putmap(int sx, int sy, int id)
                                 printf("    ");
                             else
                             {
-                                SetColor(15, 0, 1);
+#ifdef _WIN32
+                                SetColor(0xf, 0xf, 1);
+#else
+                                SetColor(F_WHITE, 0, 1);
+#endif
                                 printf("████");
                                 Setcolor();
                             }
@@ -1238,7 +1335,7 @@ void putmap(int sx, int sy, int id)
                     {
                         if (sight[id][i][j])
                         {
-                            SetColor(cls[mp[i][j].belong % clsNum], 0, 1);
+                            SetColor(colors[mp[i][j].belong % colorsNum], 0, 1);
                             printf(" ");
                             getnum(mp[i][j].tmp);
                             printf(" ");
@@ -1252,7 +1349,11 @@ void putmap(int sx, int sy, int id)
                                 printf("    ");
                             else
                             {
-                                SetColor(15, 0, 1);
+#ifdef _WIN32
+                                SetColor(0xf, 0xf, 1);
+#else
+                                SetColor(F_WHITE, 0, 1);
+#endif
                                 printf("████");
                                 Setcolor();
                             }
@@ -1273,7 +1374,7 @@ void putmap(int sx, int sy, int id)
                     {
                         if (sight[id][i][j])
                         {
-                            SetColor(cls[mp[i][j].belong % clsNum], 0, 1);
+                            SetColor(colors[mp[i][j].belong % colorsNum], 0, 1);
                             printf("[");
                             getnum(mp[i][j].tmp);
                             printf("]");
@@ -1292,7 +1393,11 @@ void putmap(int sx, int sy, int id)
                             printf("    ");
                         else
                         {
-                            SetColor(15, 0, 1);
+#ifdef _WIN32
+                            SetColor(0xf, 0xf, 1);
+#else
+                            SetColor(F_WHITE, 0, 1);
+#endif
                             printf("████");
                             Setcolor();
                         }
@@ -1307,7 +1412,11 @@ void putmap(int sx, int sy, int id)
                             printf("    ");
                         else
                         {
-                            SetColor(15, 0, 1);
+#ifdef _WIN32
+                            SetColor(0xf, 0xf, 1);
+#else
+                            SetColor(F_WHITE, 0, 1);
+#endif
                             printf("████");
                             Setcolor();
                         }
@@ -1322,7 +1431,11 @@ void putmap(int sx, int sy, int id)
                             printf("    ");
                         else
                         {
-                            SetColor(15, 0, 1);
+#ifdef _WIN32
+                            SetColor(0xf, 0xf, 1);
+#else
+                            SetColor(F_WHITE, 0, 1);
+#endif
                             printf("████");
                             Setcolor();
                         }
@@ -1341,7 +1454,11 @@ void putmap(int sx, int sy, int id)
                             printf("    ");
                         else
                         {
-                            SetColor(15, 0, 1);
+#ifdef _WIN32
+                            SetColor(0xf, 0xf, 1);
+#else
+                            SetColor(F_WHITE, 0, 1);
+#endif
                             printf("████");
                             Setcolor();
                         }
@@ -1356,7 +1473,11 @@ void putmap(int sx, int sy, int id)
                             printf("    ");
                         else
                         {
-                            SetColor(15, 0, 1);
+#ifdef _WIN32
+                            SetColor(0xf, 0xf, 1);
+#else
+                            SetColor(F_WHITE, 0, 1);
+#endif
                             printf("████");
                             Setcolor();
                         }
@@ -1371,7 +1492,11 @@ void putmap(int sx, int sy, int id)
                             printf("    ");
                         else
                         {
-                            SetColor(15, 0, 1);
+#ifdef _WIN32
+                            SetColor(0xf, 0xf, 1);
+#else
+                            SetColor(F_WHITE, 0, 1);
+#endif
                             printf("████");
                             Setcolor();
                         }
@@ -1386,7 +1511,11 @@ void putmap(int sx, int sy, int id)
                             printf("    ");
                         else
                         {
-                            SetColor(15, 0, 1);
+#ifdef _WIN32
+                            SetColor(0xf, 0xf, 1);
+#else
+                            SetColor(F_WHITE, 0, 1);
+#endif
                             printf("████");
                             Setcolor();
                         }
@@ -1401,7 +1530,11 @@ void putmap(int sx, int sy, int id)
                             printf("    ");
                         else
                         {
-                            SetColor(15, 0, 1);
+#ifdef _WIN32
+                            SetColor(0xf, 0xf, 1);
+#else
+                            SetColor(F_WHITE, 0, 1);
+#endif
                             printf("████");
                             Setcolor();
                         }
@@ -1416,7 +1549,11 @@ void putmap(int sx, int sy, int id)
                             printf("    ");
                         else
                         {
-                            SetColor(15, 0, 1);
+#ifdef _WIN32
+                            SetColor(0xf, 0xf, 1);
+#else
+                            SetColor(F_WHITE, 0, 1);
+#endif
                             printf("████");
                             Setcolor();
                         }
@@ -1431,7 +1568,11 @@ void putmap(int sx, int sy, int id)
                             printf("    ");
                         else
                         {
-                            SetColor(15, 0, 1);
+#ifdef _WIN32
+                            SetColor(0xf, 0xf, 1);
+#else
+                            SetColor(F_WHITE, 0, 1);
+#endif
                             printf("████");
                             Setcolor();
                         }
@@ -1446,7 +1587,11 @@ void putmap(int sx, int sy, int id)
                             printf("    ");
                         else
                         {
-                            SetColor(15, 0, 1);
+#ifdef _WIN32
+                            SetColor(0xf, 0xf, 1);
+#else
+                            SetColor(F_WHITE, 0, 1);
+#endif
                             printf("████");
                             Setcolor();
                         }
@@ -1461,7 +1606,11 @@ void putmap(int sx, int sy, int id)
                             printf("    ");
                         else
                         {
-                            SetColor(15, 0, 1);
+#ifdef _WIN32
+                            SetColor(0xf, 0xf, 1);
+#else
+                            SetColor(F_WHITE, 0, 1);
+#endif
                             printf("████");
                             Setcolor();
                         }
@@ -1469,7 +1618,7 @@ void putmap(int sx, int sy, int id)
                     else if (mp[i][j].type == 20)
                     {
                         if (mp[i][j].belong)
-                            SetColor(cls[mp[i][j].belong % clsNum], 0, 100);
+                            SetColor(colors[mp[i][j].belong % colorsNum], 0, 100);
                         printf("[");
                         getnum(mp[i][j].tmp);
                         printf("]");
@@ -1486,7 +1635,11 @@ void putmap(int sx, int sy, int id)
                             printf("    ");
                         else
                         {
-                            SetColor(15, 0, 1);
+#ifdef _WIN32
+                            SetColor(0xf, 0xf, 1);
+#else
+                            SetColor(F_WHITE, 0, 1);
+#endif
                             printf("████");
                             Setcolor();
                         }
@@ -1501,14 +1654,18 @@ void putmap(int sx, int sy, int id)
                             printf("    ");
                         else
                         {
-                            SetColor(15, 0, 1);
+#ifdef _WIN32
+                            SetColor(0xf, 0xf, 1);
+#else
+                            SetColor(F_WHITE, 0, 1);
+#endif
                             printf("████");
                             Setcolor();
                         }
                     }
                     else if (mp[i][j].type == Door)
                     {
-                        SetColor(cls[randnum(0, clsNum - 1)], 0, 100);
+                        SetColor(colors[randnum(0, colorsNum - 1)], 0, 100);
                         printf("(**)");
                         Setcolor();
                     }
@@ -1592,10 +1749,12 @@ void putmap(int sx, int sy, int id)
     }
     if (starting || isReplay == 2)
         return;
+#ifdef _WIN32
     gotoxy(0, 2 * ((starting ? 15 : (X > 15 ? min(sx + 7, X) : X)) - (starting ? 1 : (X > 15 ? sx - 7 : 1)) + 1) + 1);
     for (int i = 1; i <= 9; i++)
         printf("                                                                                                    \n");
     gotoxy(0, 2 * ((starting ? 15 : (X > 15 ? min(sx + 7, X) : X)) - (starting ? 1 : (X > 15 ? sx - 7 : 1)) + 1) + 1);
+#endif
     if (mapmode != 7)
         for (int i = 1; i <= X; i++)
             for (int j = 1; j <= Y; j++)
@@ -1623,7 +1782,7 @@ void putmap(int sx, int sy, int id)
         for (int i = 1, j = 1; i <= playerNum && j <= 5; i++)
             if (visplayer[score[i].id])
             {
-                SetColor(cls[score[i].id % clsNum], 0, 1);
+                SetColor(colors[score[i].id % colorsNum], 0, 1);
                 printf("player%d    team%d\n", score[i].id, Inteam[score[i].id]);
                 Setcolor();
                 j++;
@@ -1637,7 +1796,7 @@ void putmap(int sx, int sy, int id)
         {
             for (int i = 1; i <= teamNum; i++)
             {
-                SetColor(cls[score[i].id % clsNum], 0, 1);
+                SetColor(colors[score[i].id % colorsNum], 0, 1);
                 printf("team%d    %d %d\n", score[i].id, score[i].sco, score[i].lnd);
                 Setcolor();
             }
@@ -1649,7 +1808,7 @@ void putmap(int sx, int sy, int id)
             {
                 if (!fvf)
                 {
-                    SetColor(cls[score[i].id % clsNum], 0, 1);
+                    SetColor(colors[score[i].id % colorsNum], 0, 1);
                     printf("player%d    %d %d", score[i].id, score[i].sco, score[i].lnd);
                     if (mode == 2)
                         printf("    team%d", Inteam[score[i].id]);
@@ -1666,10 +1825,10 @@ void putmap(int sx, int sy, int id)
             }
             if (fvf)
             {
-                SetColor(cls[1], 0, 1);
+                SetColor(colors[1], 0, 1);
                 printf("team1    %d\n", team1);
                 Setcolor();
-                SetColor(cls[2], 0, 1);
+                SetColor(colors[2], 0, 1);
                 printf("team2    %d\n", team2);
                 Setcolor();
             }
@@ -1682,7 +1841,7 @@ void putmap(int sx, int sy, int id)
         sort(nflagscore + 1, nflagscore + teamNum + 1, cmpteam);
         for (int i = 1; i <= teamNum; i++)
         {
-            SetColor(cls[nflagscore[i].pos % clsNum], 0, 1);
+            SetColor(colors[nflagscore[i].pos % colorsNum], 0, 1);
             printf("team%d    %d\n", nflagscore[i].pos, nflagscore[i].score);
             Setcolor();
         }
@@ -2402,8 +2561,8 @@ void saveMap()
     {
         outfile.open("Map", ios::out | ios::trunc), isfirstsave = false;
         outfile << mode << " " << mapmode << " " << fvf << endl;
-        for (int i = 0; i < clsNum; i++)
-            outfile << cls[i] << " ";
+        for (int i = 0; i < colorsNum; i++)
+            outfile << colors[i] << " ";
         outfile << endl;
     }
     else
@@ -2466,9 +2625,11 @@ void itObjects()
     return;
 }
 int miniMapOpt;
+#ifdef _WIN32
 POINT p1, p2;
 double dx, dy;
 LONG xx1, yy1, xx2, yy2;
+#endif
 int getRandomAlivePlayer()
 {
     vector<int> vt;
@@ -2797,6 +2958,7 @@ void mapEditor()
             for (int j = 1; j <= Y; j++)
                 sight[0][i][j] = true;
         putmap(player[currentPlayer].selectedx, player[currentPlayer].selectedy, 0);
+#ifdef _WIN32
         if (opt == 0)
             printf("修改类型\n");
         else if (opt == 1)
@@ -2848,11 +3010,20 @@ void mapEditor()
         if (KEY_DOWN('C'))
             commandLine();
         Sleep(300);
+#else
+        char tmpc;
+        scanf("%c", &tmpc);
+        if (tmpc == 'E' || tmpc == 'e')
+            break;
+        if (tmpc == 'C' || tmpc == 'c')
+            commandLine();
+#endif
     }
     return;
 }
 int main()
 {
+#ifdef _WIN32
     system("title generals");
     system("color 0f");
     system("chcp 65001");
@@ -2863,8 +3034,10 @@ int main()
     mod &= ~ENABLE_INSERT_MODE;     //移除插入模式
     mod &= ~ENABLE_MOUSE_INPUT;
     SetConsoleMode(hStdin, mod);
+#endif
     itObjects();
     srand(time(NULL));
+#ifdef _WIN32
     printf("即将进行鼠标校准……\n");
     system("pause");
     mp[1][15].type = Land;
@@ -2894,6 +3067,7 @@ int main()
     printf("干得好。接下来请不要移动窗口，也不要调整窗口的大小。\n");
     system("pause");
     system("cls");
+#endif
     while (1)
     {
         printf("1 = 正常游戏， 2 = 播放回放\n");
@@ -3028,7 +3202,7 @@ int main()
         opt = true;
     if (isReplay == 1)
     {
-        random_shuffle(cls, cls + clsNum);
+        random_shuffle(colors, colors + colorsNum);
         generateMap(mapmode);
         if (mapmode == Qianhao)
         {
@@ -3112,8 +3286,8 @@ int main()
         infile.open("Map", ios::in);
         int _mode, _mapmode;
         infile >> _mode >> _mapmode >> fvf;
-        for (int i = 0; i < clsNum; i++)
-            infile >> cls[i];
+        for (int i = 0; i < colorsNum; i++)
+            infile >> colors[i];
         mode = (game_mode)_mode;
         mapmode = (map_mode)_mapmode;
         if (X > 15 || Y > 15)
@@ -3180,22 +3354,9 @@ int main()
                             break;
                         }
             }
+#ifdef _WIN32
             if (KEY_DOWN('F'))
-                while (1)
-                {
-                    currentPlayer = (currentPlayer == playerNum ? 1 : currentPlayer + 1);
-                    bool flag = false;
-                    for (int i = 1; i <= X; i++)
-                        for (int j = 1; j <= Y; j++)
-                            if (mp[i][j].type == General && mp[i][j].belong == currentPlayer && mp[i][j].tmp > 0)
-                            {
-                                flag = true;
-                                i = X + 1;
-                                break;
-                            }
-                    if (flag)
-                        break;
-                }
+                currentPlayer = getRandomAlivePlayer();
             if ((X > 15 || Y > 15) && KEY_DOWN('Q'))
             {
                 if (miniMapLevel > 3)
@@ -3206,6 +3367,23 @@ int main()
                 if (miniMapLevel < 9)
                     miniMapLevel++;
             }
+            Sleep(tpt);
+#else
+            char tmpc;
+            scanf("%c", &tmpc);
+            if (tmpc == 'F' || tmpc == 'f')
+                currentPlayer = getRandomAlivePlayer();
+            if ((X > 15 || Y > 15) && (tmpc == 'Q' || tmpc == 'q'))
+            {
+                if (miniMapLevel > 3)
+                    miniMapLevel--;
+            }
+            if ((X > 15 || Y > 15) && (tmpc == 'E' || tmpc == 'e'))
+            {
+                if (miniMapLevel < 9)
+                    miniMapLevel++;
+            }
+#endif
             if (miniMapOpt == 1)
                 isMiniMap = true;
             else if (miniMapOpt == 2)
@@ -3215,7 +3393,6 @@ int main()
                 else
                     isMiniMap = false;
             }
-            Sleep(tpt);
         }
         infile.close();
         return 0;
@@ -3242,6 +3419,7 @@ int main()
                     ktRemainTime = -1;
                 }
             }
+#ifdef _WIN32
             for (int j = 0; j < 5; j++)
                 if (inp == ' ' && KEY_DOWN(keys[j]))
                     inp = keys[j];
@@ -3278,7 +3456,6 @@ int main()
                             }
                 }
             }
-            Sleep(tpt);
             if ((X > 15 || Y > 15) && KEY_DOWN('Q'))
             {
                 if (miniMapLevel > 3)
@@ -3308,22 +3485,64 @@ int main()
                 player[currentPlayer].playermove(inp);
             if (KEY_DOWN('F'))
             {
-                while (1)
-                {
-                    currentPlayer = (currentPlayer == playerNum ? 1 : currentPlayer + 1);
-                    bool flag = false;
-                    for (int i = 1; i <= X; i++)
-                        for (int j = 1; j <= Y; j++)
-                            if (mp[i][j].type == General && mp[i][j].belong == currentPlayer && mp[i][j].tmp > 0)
-                            {
-                                flag = true;
-                                i = X + 1;
-                                break;
-                            }
-                    if (flag)
-                        break;
-                }
+                currentPlayer = getRandomAlivePlayer();
             }
+            Sleep(tpt);
+#else
+            scanf("%c", &inp);
+            inp = toupper(inp);
+            if ((X > 15 || Y > 15) && inp == 'Q')
+            {
+                if (miniMapLevel > 3)
+                    miniMapLevel--;
+            }
+            else if ((X > 15 || Y > 15) && inp == 'E')
+            {
+                if (miniMapLevel < 9)
+                    miniMapLevel++;
+            }
+            else if (inp == 'C')
+            {
+                commandLine();
+            }
+            else if (inp == 'F')
+            {
+                currentPlayer = getRandomAlivePlayer();
+            }
+            else if (inp == 'G')
+            {
+                for (int i = 1; i <= X; i++)
+                    for (int j = 1; j <= Y; j++)
+                        if (mp[i][j].type == General && mp[i][j].belong == currentPlayer)
+                        {
+                            player[currentPlayer].selectedx = i;
+                            player[currentPlayer].selectedy = j;
+                            i = X + 1;
+                            break;
+                        }
+            }
+            else if (inp == 'I')
+                player[currentPlayer].selectedx--;
+            else if (inp == 'K')
+                player[currentPlayer].selectedx++;
+            else if (inp == 'J')
+                player[currentPlayer].selectedy--;
+            else if (inp == 'L')
+                player[currentPlayer].selectedy++;
+            if (miniMapOpt == 1)
+                isMiniMap = true;
+            else if (miniMapOpt == 2)
+            {
+                if (inp == 'M')
+                    isMiniMap = true;
+                else
+                    isMiniMap = false;
+            }
+            if (inp == 'Z')
+                player[currentPlayer].halfselect ^= 1;
+            else
+                player[currentPlayer].playermove(inp);
+#endif
             for (int i = 1; i <= playerNum; i++)
                 if (player[i].isbot)
                     player[i].botmove();
@@ -3511,86 +3730,130 @@ int main()
             }
         }
         bool ismouse = true;
-        for (int j = 0; j < 5; j++)
-            if (inp == ' ' && KEY_DOWN(keys[j]))
-                inp = keys[j];
-        if (ismouse && KEY_DOWN(MOUSE_MOVED))
-        {
-            GetCursorPos(&p1);
-            int sp = int(round((double(p1.y) - double(xx1)) / dx)) + 1 + (X > 15 ? player[currentPlayer].selectedx - 8 : 0);
-            int sq = int(round((double(p1.x) - double(yy1)) / dy)) + 1 + (Y > 15 ? player[currentPlayer].selectedy - 8 : 0);
-            player[currentPlayer].selectedx = sp;
-            player[currentPlayer].selectedy = sq;
-            ismouse = false;
-            if (isHaveSend[currentPlayer] && sight[currentPlayer][sp][sq] && mp[sp][sq].type == Empty_land)
+#ifdef _WIN32
+            for (int j = 0; j < 5; j++)
+                if (inp == ' ' && KEY_DOWN(keys[j]))
+                    inp = keys[j];
+            if (ismouse && KEY_DOWN(MOUSE_MOVED))
             {
-                for (int i = 1; i <= X; i++)
-                    for (int j = 1; j <= Y; j++)
-                        if (mp[i][j].type == General && mp[i][j].belong == currentPlayer)
-                        {
-                            swap(mp[i][j], mp[sp][sq]);
-                            i = X + 1;
-                            isHaveSend[currentPlayer] = false;
-                            break;
-                        }
+                GetCursorPos(&p1);
+                int sp = int(round((double(p1.y) - double(xx1)) / dx)) + 1 + (X > 15 ? player[currentPlayer].selectedx - 8 : 0);
+                int sq = int(round((double(p1.x) - double(yy1)) / dy)) + 1 + (Y > 15 ? player[currentPlayer].selectedy - 8 : 0);
+                player[currentPlayer].selectedx = sp;
+                player[currentPlayer].selectedy = sq;
+                ismouse = false;
+                if (isHaveSend[currentPlayer] && sight[currentPlayer][sp][sq] && mp[sp][sq].type == Empty_land)
+                {
+                    for (int i = 1; i <= X; i++)
+                        for (int j = 1; j <= Y; j++)
+                            if (mp[i][j].type == General && mp[i][j].belong == currentPlayer)
+                            {
+                                swap(mp[i][j], mp[sp][sq]);
+                                i = X + 1;
+                                isHaveSend[currentPlayer] = false;
+                                break;
+                            }
+                }
+                else if (playerGrenade[currentPlayer] > 0 && mp[sp][sq].type != Wall)
+                {
+                    for (int i = 1; i <= X; i++)
+                        for (int j = 1; j <= Y; j++)
+                            if (mp[i][j].type == General && mp[i][j].belong == currentPlayer)
+                            {
+                                addGrenade(i, j, sp, sq, playerGrenade[currentPlayer] * 20, currentPlayer);
+                                i = X + 1;
+                                playerGrenade[currentPlayer] = 0;
+                                break;
+                            }
+                }
             }
-            else if (playerGrenade[currentPlayer] > 0 && mp[sp][sq].type != Wall)
+            if ((X > 15 || Y > 15) && KEY_DOWN('Q'))
             {
-                for (int i = 1; i <= X; i++)
-                    for (int j = 1; j <= Y; j++)
-                        if (mp[i][j].type == General && mp[i][j].belong == currentPlayer)
-                        {
-                            addGrenade(i, j, sp, sq, playerGrenade[currentPlayer] * 20, currentPlayer);
-                            i = X + 1;
-                            playerGrenade[currentPlayer] = 0;
-                            break;
-                        }
+                if (miniMapLevel > 3)
+                    miniMapLevel--;
             }
-        }
-        Sleep(tpt);
-        if ((X > 15 || Y > 15) && KEY_DOWN('Q'))
-        {
-            if (miniMapLevel > 3)
-                miniMapLevel--;
-        }
-        if ((X > 15 || Y > 15) && KEY_DOWN('E'))
-        {
-            if (miniMapLevel < 9)
-                miniMapLevel++;
-        }
-        if (KEY_DOWN('C'))
-        {
-            commandLine();
-        }
-        if (miniMapOpt == 1)
-            isMiniMap = true;
-        else if (miniMapOpt == 2)
-        {
-            if (KEY_DOWN('M'))
+            if ((X > 15 || Y > 15) && KEY_DOWN('E'))
+            {
+                if (miniMapLevel < 9)
+                    miniMapLevel++;
+            }
+            if (KEY_DOWN('C'))
+            {
+                commandLine();
+            }
+            if (miniMapOpt == 1)
                 isMiniMap = true;
-            else
-                isMiniMap = false;
-        }
-        if (inp == 'Z')
-            player[currentPlayer].halfselect ^= 1;
-        else if (inp == 'F')
-        {
-            while (1)
+            else if (miniMapOpt == 2)
             {
-                currentPlayer = (currentPlayer == playerNum ? 1 : currentPlayer + 1);
-                bool flag = false;
+                if (KEY_DOWN('M'))
+                    isMiniMap = true;
+                else
+                    isMiniMap = false;
+            }
+            if (inp == 'Z')
+                player[currentPlayer].halfselect ^= 1;
+            else
+                player[currentPlayer].playermove(inp);
+            if (KEY_DOWN('F'))
+            {
+                currentPlayer = getRandomAlivePlayer();
+            }
+            Sleep(tpt);
+#else
+            scanf("%c", &inp);
+            inp = toupper(inp);
+            if ((X > 15 || Y > 15) && inp == 'Q')
+            {
+                if (miniMapLevel > 3)
+                    miniMapLevel--;
+            }
+            else if ((X > 15 || Y > 15) && inp == 'E')
+            {
+                if (miniMapLevel < 9)
+                    miniMapLevel++;
+            }
+            else if (inp == 'C')
+            {
+                commandLine();
+            }
+            else if (inp == 'F')
+            {
+                currentPlayer = getRandomAlivePlayer();
+            }
+            else if (inp == 'G')
+            {
                 for (int i = 1; i <= X; i++)
                     for (int j = 1; j <= Y; j++)
-                        if (mp[i][j].type == General && mp[i][j].belong == currentPlayer && mp[i][j].tmp > 0)
+                        if (mp[i][j].type == General && mp[i][j].belong == currentPlayer)
                         {
-                            flag = true;
+                            player[currentPlayer].selectedx = i;
+                            player[currentPlayer].selectedy = j;
                             i = X + 1;
                             break;
                         }
-                if (flag)
-                    break;
             }
-        }
+            else if (inp == 'I')
+                player[currentPlayer].selectedx--;
+            else if (inp == 'K')
+                player[currentPlayer].selectedx++;
+            else if (inp == 'J')
+                player[currentPlayer].selectedy--;
+            else if (inp == 'L')
+                player[currentPlayer].selectedy++;
+            if (miniMapOpt == 1)
+                isMiniMap = true;
+            else if (miniMapOpt == 2)
+            {
+                if (inp == 'M')
+                    isMiniMap = true;
+                else
+                    isMiniMap = false;
+            }
+            if (inp == 'Z')
+                player[currentPlayer].halfselect ^= 1;
+            else
+                player[currentPlayer].playermove(inp);
+#endif
         for (int i = 1; i <= teamNum; i++)
             team[i].move(inp);
         for (int i = 1; i <= X; i++)
@@ -3910,5 +4173,4 @@ int main()
     else if (MessageBox(NULL, "没有队伍胜利。是否保存回放？", "欢呼", MB_OKCANCEL) == IDOK)
         savereplay();
     return 0;
-    
 }
