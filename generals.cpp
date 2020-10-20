@@ -1833,7 +1833,7 @@ void putmap(int sx, int sy, int id)
                 if (!fvf)
                 {
                     SetColor(colors[score[i].id % colorsNum], 0, 1);
-                    playerScore[score[i].id] += max(-1.0, playerTkn[score[i].id] == 0 ? -1.0 : (double)playerDmg[score[i].id] / (double)playerTkn[score[i].id]);
+                    playerScore[score[i].id] += max(0.0, playerTkn[score[i].id] == 0 ? 0.0 : (double)playerDmg[score[i].id] / (double)playerTkn[score[i].id]);
                     printf("player%d    %d %d %.2lf", score[i].id, score[i].sco, score[i].lnd, playerScore[score[i].id]);
                     if (mode == 2)
                         printf("    team%d", Inteam[score[i].id]);
