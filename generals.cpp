@@ -832,6 +832,8 @@ void getnum(int x)
 int playeratk[105], playerac[105], playerfh[105], playerGrenade[105];
 int isGrenade[105][105];
 int teampointsmatchscore[105], teampointsmatchland[105];
+int playerDmg[105], playerTkn[105];
+double playerScore[105];
 struct Grenade
 {
     int sx, sy, ex, ey, dmg, frm, cx, cy, tmp;
@@ -1815,15 +1817,44 @@ void putmap(int sx, int sy, int id)
         }
         else
         {
+            double playerAverageScore = 0.0;
+            for (int i = 1; i <= playerNum; i++)
+                playerAverageScore += playerScore[i];
+            playerAverageScore /= (double)playerNum;
             int team1 = 0, team2 = 0;
+            double playerMaxScore = 0.0, playerMinScore = 100.0;
+            for (int i = 1; i <= playerNum; i++)
+            {
+                playerMaxScore = max(playerMaxScore, playerScore[i]);
+                playerMinScore = min(playerMinScore, playerScore[i]);
+            }
             for (int i = 1; i <= playerNum; i++)
             {
                 if (!fvf)
                 {
                     SetColor(colors[score[i].id % colorsNum], 0, 1);
-                    printf("player%d    %d %d", score[i].id, score[i].sco, score[i].lnd);
+                    playerScore[score[i].id] += max(-1.0, playerTkn[score[i].id] == 0 ? -1.0 : (double)playerDmg[score[i].id] / (double)playerTkn[score[i].id]);
+                    printf("player%d    %d %d %.2lf", score[i].id, score[i].sco, score[i].lnd, playerScore[score[i].id]);
                     if (mode == 2)
                         printf("    team%d", Inteam[score[i].id]);
+                    if (playerScore[score[i].id] >= playerAverageScore)
+                    {
+                        #ifdef _WIN32
+                        SetColor(0x2, 0, 1);
+                        #else
+                        SetColor(F_GREEN, 0, 1);
+                        #endif
+                        printf(" +%.1lf%%", (playerScore[score[i].id] - playerAverageScore) / (playerMaxScore - playerAverageScore) * 100.0);
+                    }
+                    else
+                    {
+                        #ifdef _WIN32
+                        SetColor(0xc, 0, 1);
+                        #else
+                        SetColor(F_RED, 0, 1);
+                        #endif
+                        printf(" -%.1lf%%", -(playerScore[score[i].id] - playerAverageScore) / -(playerMinScore - playerAverageScore) * 100.0);
+                    }
                     printf("\n");
                     Setcolor();
                 }
@@ -2011,6 +2042,8 @@ struct Player
                 dt->tmp += moved;
             else
             {
+                playerDmg[dp->belong] += min(moved, dt->tmp + 1);
+                playerTkn[dt->belong] += min(moved, dt->tmp + 1);
                 if (moved > dt->tmp)
                 {
                     dt->tmp = moved - dt->tmp;
