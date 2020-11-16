@@ -3159,16 +3159,6 @@ int main()
         {
             printf("选择地图：1 = 随机地图， 2 = 空白地图， 3 = 迷宫地图， 4 = 端午地图， 5  = 吃鸡地图， 6 = 夺旗地图， 7 = 占点地图， 8 = 涂色地图，\n9 = 堑壕地图， 10 = 棋盘地图\n");
             scanf("%d", &mapmode);
-            if (mode == 1 && mapmode == 6)
-            {
-                printf("抱歉，夺旗地图不支持FFA模式。\n");
-                continue;
-            }
-            if (mode == 1 && mapmode == 7)
-            {
-                printf("抱歉，占点地图不支持FFA模式。\n");
-                continue;
-            }
             if (isBoss && mapmode == 6)
             {
                 printf("抱歉，夺旗地图不支持Boss模式。\n");
@@ -3177,6 +3167,26 @@ int main()
             if (isBoss == 1 && mapmode == 7)
             {
                 printf("抱歉，占点地图不支持Boss模式。\n");
+                continue;
+            }
+            if (isEvent && mapmode == 6)
+            {
+                printf("抱歉，夺旗地图不支持Event模式。\n");
+                continue;
+            }
+            if (isEvent == 1 && mapmode == 7)
+            {
+                printf("抱歉，占点地图不支持Event模式。\n");
+                continue;
+            }
+            if (mode == 1 && mapmode == 6)
+            {
+                printf("抱歉，夺旗地图不支持FFA模式。\n");
+                continue;
+            }
+            if (mode == 1 && mapmode == 7)
+            {
+                printf("抱歉，占点地图不支持FFA模式。\n");
                 continue;
             }
             if (mapmode == 1 || mapmode == 2 || mapmode == 3 || mapmode == 4 || mapmode == 5 || mapmode == 6 || mapmode == 7 || mapmode == 8 || mapmode == 9 || mapmode == 10)
