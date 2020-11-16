@@ -82,7 +82,8 @@ enum game_mode
     Ffa,
     Tdm,
     Fvf,
-    Boss
+    Boss,
+    Event
 };
 enum map_mode
 {
@@ -163,6 +164,7 @@ bool fvf;
 bool isGz;
 bool opt;
 bool isBoss;
+bool isEvent;
 int bossID;
 struct doorPos
 {
@@ -3125,9 +3127,9 @@ int main()
     {
         while (1)
         {
-            printf("选择模式：1 = Free For All， 2 = Team Deathmatch， 3 = 50v50， 4 = Boss\n");
+            printf("选择模式：1 = Free For All， 2 = Team Deathmatch， 3 = 50v50， 4 = Boss， 5 = Event\n");
             scanf("%d", &mode);
-            if (mode == 1 || mode == 2 || mode == 3 || mode == 4)
+            if (mode == 1 || mode == 2 || mode == 3 || mode == 4 || mode == 5)
                 break;
         }
         if (mode == 3)
@@ -3147,6 +3149,11 @@ int main()
             isBoss = true;
             mode = Tdm;
             teamNum = 2;
+        }
+        if (mode == Event)
+        {
+            isEvent = true;
+            mode = Ffa;
         }
         while (1)
         {
@@ -3609,7 +3616,7 @@ int main()
                     if (mp[i][j].belong)
                     {
                         sight[mp[i][j].belong][i][j] = true;
-                        if (mapmode == 5 && blindTimeRemain[mp[i][j].belong] > 0)
+                        if (mapmode == 5 && blindTimeRemain[mp[i][j].belong] > 0 || isEvent)
                             continue;
                         if (mapmode == 5 && mp[i][j].belong == currentPlayer)
                             for (int k = i - 2 - isHaveTs[currentPlayer]; k <= i + 2 + isHaveTs[currentPlayer]; k++)
