@@ -723,27 +723,27 @@ void SetColor(int ForeColor = 7, int BackGroundColor = 0, int pri = 0) //https:/
     nowpri = pri;
     switch (fore)
     {
-    case F_BLACK:
-        printf("\033[30m");
-        break;
-    case F_RED:
-        printf("\033[31m");
-        break;
-    case F_GREEN:
-        printf("\033[32m");
-        break;
-    case F_YELLOW:
-        printf("\033[33m");
-        break;
-    case F_BLUE:
-        printf("\033[34m");
-        break;
-    case F_PURPLE:
-        printf("\033[35m");
-        break;
-    case F_WHITE:
-        printf("\033[37m");
-        break;
+        case F_BLACK:
+            printf("\033[30m");
+            break;
+        case F_RED:
+            printf("\033[31m");
+            break;
+        case F_GREEN:
+            printf("\033[32m");
+            break;
+        case F_YELLOW:
+            printf("\033[33m");
+            break;
+        case F_BLUE:
+            printf("\033[34m");
+            break;
+        case F_PURPLE:
+            printf("\033[35m");
+            break;
+        case F_WHITE:
+            printf("\033[37m");
+            break;
     }
     return;
 }
@@ -904,11 +904,11 @@ void printCurrentMiniMap(int bgmp, int id)
     {
         if (sm[bgmp][j] == 200)
         {
-            #ifdef _WIN32
+#ifdef _WIN32
             SetColor(0xc, 0xc, 1);
-            #else
+#else
             SetColor(F_RED, 0, 1);
-            #endif
+#endif
         }
         else if (sm[bgmp][j] == 100)
         {
@@ -923,11 +923,11 @@ void printCurrentMiniMap(int bgmp, int id)
             Setcolor();
         else if (sm[bgmp][j] == -1)
         {
-            #ifdef _WIN32
+#ifdef _WIN32
             SetColor(0xd, 0xd, 2);
-            #else
+#else
             SetColor(F_PURPLE, 0, 2);
-            #endif
+#endif
         }
         else
             SetColor(colors[sm[bgmp][j]], 0, 1);
@@ -1839,20 +1839,20 @@ void putmap(int sx, int sy, int id)
                         printf("    team%d", Inteam[score[i].id]);
                     if (playerScore[score[i].id] >= playerAverageScore)
                     {
-                        #ifdef _WIN32
+#ifdef _WIN32
                         SetColor(0x2, 0, 1);
-                        #else
+#else
                         SetColor(F_GREEN, 0, 1);
-                        #endif
+#endif
                         printf(" +%.1lf%%", (playerScore[score[i].id] - playerAverageScore) / (playerMaxScore - playerAverageScore) * 100.0);
                     }
                     else
                     {
-                        #ifdef _WIN32
+#ifdef _WIN32
                         SetColor(0xc, 0, 1);
-                        #else
+#else
                         SetColor(F_RED, 0, 1);
-                        #endif
+#endif
                         printf(" -%.1lf%%", -(playerScore[score[i].id] - playerAverageScore) / -(playerMinScore - playerAverageScore) * 100.0);
                     }
                     printf("\n");
@@ -3777,7 +3777,7 @@ int main()
         }
         bool ismouse = true;
 #ifdef _WIN32
-            for (int j = 0; j < 5; j++)
+        for (int j = 0; j < 5; j++)
                 if (inp == ' ' && KEY_DOWN(keys[j]))
                     inp = keys[j];
             if (ismouse && KEY_DOWN(MOUSE_MOVED))
@@ -3846,59 +3846,59 @@ int main()
             }
             Sleep(tpt);
 #else
-            scanf("%c", &inp);
-            inp = toupper(inp);
-            if ((X > 15 || Y > 15) && inp == 'Q')
-            {
-                if (miniMapLevel > 3)
-                    miniMapLevel--;
-            }
-            else if ((X > 15 || Y > 15) && inp == 'E')
-            {
-                if (miniMapLevel < 9)
-                    miniMapLevel++;
-            }
-            else if (inp == 'C')
-            {
-                commandLine();
-            }
-            else if (inp == 'F')
-            {
-                currentPlayer = getRandomAlivePlayer();
-            }
-            else if (inp == 'G')
-            {
-                for (int i = 1; i <= X; i++)
-                    for (int j = 1; j <= Y; j++)
-                        if (mp[i][j].type == General && mp[i][j].belong == currentPlayer)
-                        {
-                            player[currentPlayer].selectedx = i;
-                            player[currentPlayer].selectedy = j;
-                            i = X + 1;
-                            break;
-                        }
-            }
-            else if (inp == 'I')
-                player[currentPlayer].selectedx--;
-            else if (inp == 'K')
-                player[currentPlayer].selectedx++;
-            else if (inp == 'J')
-                player[currentPlayer].selectedy--;
-            else if (inp == 'L')
-                player[currentPlayer].selectedy++;
-            if (miniMapOpt == 1)
+        scanf("%c", &inp);
+        inp = toupper(inp);
+        if ((X > 15 || Y > 15) && inp == 'Q')
+        {
+            if (miniMapLevel > 3)
+                miniMapLevel--;
+        }
+        else if ((X > 15 || Y > 15) && inp == 'E')
+        {
+            if (miniMapLevel < 9)
+                miniMapLevel++;
+        }
+        else if (inp == 'C')
+        {
+            commandLine();
+        }
+        else if (inp == 'F')
+        {
+            currentPlayer = getRandomAlivePlayer();
+        }
+        else if (inp == 'G')
+        {
+            for (int i = 1; i <= X; i++)
+                for (int j = 1; j <= Y; j++)
+                    if (mp[i][j].type == General && mp[i][j].belong == currentPlayer)
+                    {
+                        player[currentPlayer].selectedx = i;
+                        player[currentPlayer].selectedy = j;
+                        i = X + 1;
+                        break;
+                    }
+        }
+        else if (inp == 'I')
+            player[currentPlayer].selectedx--;
+        else if (inp == 'K')
+            player[currentPlayer].selectedx++;
+        else if (inp == 'J')
+            player[currentPlayer].selectedy--;
+        else if (inp == 'L')
+            player[currentPlayer].selectedy++;
+        if (miniMapOpt == 1)
+            isMiniMap = true;
+        else if (miniMapOpt == 2)
+        {
+            if (inp == 'M')
                 isMiniMap = true;
-            else if (miniMapOpt == 2)
-            {
-                if (inp == 'M')
-                    isMiniMap = true;
-                else
-                    isMiniMap = false;
-            }
-            if (inp == 'Z')
-                player[currentPlayer].halfselect ^= 1;
             else
-                player[currentPlayer].playermove(inp);
+                isMiniMap = false;
+        }
+        if (inp == 'Z')
+            player[currentPlayer].halfselect ^= 1;
+        else
+            player[currentPlayer].playermove(inp);
 #endif
         for (int i = 1; i <= teamNum; i++)
             team[i].move(inp);
