@@ -4247,6 +4247,8 @@ int main()
                 i = X + 1;
                 break;
             }
+    if (isZombie && zombieRemainTime <= 0)
+        winner = 1;
     if (winner != -1)
     {
         string opt = "team" + myto_string(winner) + "赢了！是否保存回放？";
