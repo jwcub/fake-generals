@@ -1,8 +1,10 @@
 #include <iostream>
+
 #ifdef _WIN32
 #include <windows.h>
 #include <conio.h>
 #endif
+
 #include <string>
 #include <cstring>
 #include <ctime>
@@ -18,16 +20,7 @@
 #include <cmath>
 #include <sstream>
 #include <fstream>
-#ifdef _WIN32
-#define KEY_DOWN(VK_NONAME) ((GetAsyncKeyState(VK_NONAME) & 0x8000) ? 1 : 0)
-#else
-#define KEY_DOWN(VK_NONAME) 0
-#include <unistd.h>
-#define Sleep(SLEEP_TIME) sleep(SLEEP_TIME)
-#define MessageBox(msgA, msgB, msgC, msgD) 998244353
-#define IDOK 114514
-#define cls clear
-#endif
+
 using std::cin;
 using std::cout;
 using std::endl;
@@ -49,6 +42,31 @@ using std::string;
 using std::stringstream;
 using std::swap;
 using std::vector;
+
+#ifdef _WIN32
+#define KEY_DOWN(VK_NONAME) ((GetAsyncKeyState(VK_NONAME) & 0x8000) ? 1 : 0)
+#else
+#define KEY_DOWN(VK_NONAME) 0
+
+#include <unistd.h>
+
+#define Sleep(SLEEP_TIME) sleep(SLEEP_TIME / 1000.0)
+int fakeMsgBox(int a, const char *b, string c, int d)
+{
+    system("clear");
+    sleep(1);
+    printf("%s(Y/N)\n", b);
+    char p;
+    scanf("%c", &p);
+    if (p == 'y' || p == 'Y')
+        return 114514;
+    else
+        return 998244353;
+}
+#define MessageBox(msgA, msgB, msgC, msgD) fakeMsgBox(0, msgB, msgC, 0)
+#define IDOK 114514
+#define cls clear
+#endif
 enum land_type
 {
     Empty_land,
@@ -83,7 +101,8 @@ enum game_mode
     Tdm,
     Fvf,
     Boss,
-    Event
+    Event,
+    Zombie
 };
 enum map_mode
 {
@@ -128,9 +147,13 @@ int teamNum = 2;        //队伍的数量。如果以 TDM 模式游玩，请确�
 int dq = 40;            //毒圈的扩散时间
 int ktTime = 100;       //空投的投放时间。请保证此变量大于 10
 int pointsTime = 20;    //占领一个据点所需的时间
-int paintTime = 300;    //涂色地图的时间
+int paintTime = 300;    //涂色模式的时间
+int zombieTime = 300;   //Zombie 模式的时间
 
-int dir[4][2] = {{-1, 0}, {0, 1}, {1, 0}, {0, -1}};
+int dir[4][2] = {{-1, 0},
+                 {0,  1},
+                 {1,  0},
+                 {0,  -1}};
 int vis[105][105];
 bool sight[105][105][105];
 int Inteam[105];
@@ -148,10 +171,12 @@ int ktRemainTime = -1;
 int isReplay;
 bool isPaint;
 int paintRemainTime;
+int zombieRemainTime;
 bool isHaveSend[105];
 int turn = 1;
 int currentPlayer = 1;
 bool isChess;
+bool isZombie;
 int randnum(int l, int r)
 {
     return rand() % (r - l + 1) + l;
@@ -166,6 +191,7 @@ bool opt;
 bool isBoss;
 bool isEvent;
 int bossID;
+int motherID;
 struct doorPos
 {
     int x, y;
@@ -173,7 +199,14 @@ struct doorPos
 vector<doorPos> doors;
 void addDoor(int x, int y)
 {
-    doors.push_back((doorPos){x, y});
+    doors.push_back((doorPos) {x, y});
+    return;
+}
+void switchTeamTo(int pid, int t)
+{
+    ifTeam[Inteam[pid]].erase(ifTeam[Inteam[pid]].find(pid));
+    ifTeam[t].insert(pid);
+    Inteam[pid] = t;
     return;
 }
 void gotoxy(int x, int y)
@@ -359,7 +392,7 @@ int Astar(int x, int y, int tar_x, int tar_y)
     bool viss[105][105];
     memset(viss, 0, sizeof(viss));
     queue<point> q;
-    q.push((point){x, y, 0});
+    q.push((point) {x, y, 0});
     viss[x][y] = 1;
     while (!q.empty())
     {
@@ -371,7 +404,7 @@ int Astar(int x, int y, int tar_x, int tar_y)
             if (tx2 > X || ty2 > X || tx2 <= 0 || ty2 <= 0 || mp[tx2][ty2].type == Wall || viss[tx2][ty2])
                 continue;
             viss[tx2][ty2] = 1;
-            q.push((point){tx2, ty2, step + 1});
+            q.push((point) {tx2, ty2, step + 1});
             if (tx2 == tar_x && ty2 == tar_y)
                 return step + 1;
         }
@@ -396,13 +429,13 @@ void generateMazeMap() //https://github.com/By-Ha/Checkmate/blob/master/game/map
             if (i % 2 == 0 && j % 2 == 1)
             {
                 venum[i][j] = etot;
-                edges[etot] = (edge){venum[tmp1][j], venum[tmp2][j], 10 + randnum(1, 10), i, j};
+                edges[etot] = (edge) {venum[tmp1][j], venum[tmp2][j], 10 + randnum(1, 10), i, j};
                 ++etot;
             }
             if (i % 2 == 1 && j % 2 == 0)
             {
                 venum[i][j] = etot;
-                edges[etot] = (edge){venum[i][tmp3], venum[i][tmp4], 10 + randnum(1, 10), i, j};
+                edges[etot] = (edge) {venum[i][tmp3], venum[i][tmp4], 10 + randnum(1, 10), i, j};
                 ++etot;
             }
         }
@@ -416,8 +449,7 @@ void generateMazeMap() //https://github.com/By-Ha/Checkmate/blob/master/game/map
             id[find(edges[i].a)] = id[(edges[i].b)];
             mp[edges[i].posa][edges[i].posb].type = Empty_city;
             mp[edges[i].posa][edges[i].posb].tmp = 10;
-        }
-        else
+        } else
         {
             mp[edges[i].posa][edges[i].posb].type = Wall;
         }
@@ -525,18 +557,19 @@ void generateDragonBoatFestivalMap() //https://github.com/By-Ha/Checkmate/blob/m
             return;
         }
         int t1 = randnum(1, X - 2) + 1, t2 = randnum(1, Y - 2) + 1;
-        while (mp[t1][t2].type != Empty_land || (mp[t1 + 1][t2].type != Empty_land && mp[t1 - 1][t2].type != Empty_land && mp[t1][t2 + 1].type != Empty_land && mp[t1][t2 + 1].type != Empty_land))
+        while (mp[t1][t2].type != Empty_land ||
+               (mp[t1 + 1][t2].type != Empty_land && mp[t1 - 1][t2].type != Empty_land &&
+                mp[t1][t2 + 1].type != Empty_land && mp[t1][t2 + 1].type != Empty_land))
             t1 = randnum(1, X - 2) + 1, t2 = randnum(1, Y - 2) + 1;
         if (i == 1)
         {
             mp[t1][t2].belong = i;
             mp[t1][t2].tmp = 100;
             mp[t1][t2].type = General;
-        }
-        else
+        } else
         {
             int flag = 0;
-            for (int j = 0; j < (int)lst.size(); ++j)
+            for (int j = 0; j < (int) lst.size(); ++j)
             {
                 if (Astar(t1, t2, lst[j].a, lst[j].b) > 6)
                 {
@@ -553,7 +586,7 @@ void generateDragonBoatFestivalMap() //https://github.com/By-Ha/Checkmate/blob/m
                 mp[t1][t2].type = General;
             }
         }
-        lst.push_back((node2){t1, t2});
+        lst.push_back((node2) {t1, t2});
     }
     for (int i = 1; i <= playerNum; ++i)
     {
@@ -570,8 +603,7 @@ void generateDragonBoatFestivalMap() //https://github.com/By-Ha/Checkmate/blob/m
                 mp[t1][t2].belong = i;
                 mp[t1][t2].tmp = 50;
                 mp[t1][t2].type = City;
-            }
-            else
+            } else
             {
                 mp[t1][t2].belong = i;
                 mp[t1][t2].tmp = 5;
@@ -614,8 +646,7 @@ void generateChessMap()
             {
                 mp[i + 2][j + 2].type = Door;
                 addDoor(i + 2, j + 2);
-            }
-            else
+            } else
             {
                 for (int p = i; p < i + 5; p++)
                     for (int q = j; q < j + 5; q++)
@@ -637,21 +668,17 @@ void generateMap(map_mode mpm)
         generatePlayer();
         generateCity();
         generateWall();
-    }
-    else if (mpm == Blank)
+    } else if (mpm == Blank)
     {
         generatePlayer();
         generateWall();
-    }
-    else if (mpm == Maze)
+    } else if (mpm == Maze)
     {
         generateMazeMap();
-    }
-    else if (mpm == Dboat)
+    } else if (mpm == Dboat)
     {
         generateDragonBoatFestivalMap();
-    }
-    else if (mpm == Pubg)
+    } else if (mpm == Pubg)
     {
         generatePlayer();
         generateWall();
@@ -659,27 +686,22 @@ void generateMap(map_mode mpm)
             for (int j = 1; j <= Y; j++)
                 if (mp[i][j].type == General)
                     mp[i][j].tmp = 100;
-    }
-    else if (mpm == CFlag)
+    } else if (mpm == CFlag)
     {
         generatePlayer();
         generateWall();
-    }
-    else if (mpm == CPoints)
+    } else if (mpm == CPoints)
     {
         generatePlayer();
         generateWall();
-    }
-    else if (mpm == Paint)
+    } else if (mpm == Paint)
     {
         generatePlayer();
         generateWall();
-    }
-    else if (mpm == Qianhao)
+    } else if (mpm == Qianhao)
     {
         generateQianHaoMap();
-    }
-    else if (mpm == Chess)
+    } else if (mpm == Chess)
     {
         generateChessMap();
         isChess = true;
@@ -717,7 +739,8 @@ const int F_PURPLE = 0x06; // 000110
 const int F_WHITE = 0x07;
 int colors[7] = {1, 2, 3, 4, 5, 6, 7};
 int colorsNum = 7;
-void SetColor(int ForeColor = 7, int BackGroundColor = 0, int pri = 0) //https://blog.csdn.net/hn_tzy/article/details/92565047
+void SetColor(int ForeColor = 7, int BackGroundColor = 0,
+              int pri = 0) //https://blog.csdn.net/hn_tzy/article/details/92565047
 {
     int fore = ForeColor;
     if (nowpri != 0 && pri < nowpri)
@@ -769,8 +792,7 @@ void printPlayer(int id, bool isTeam = true)
         SetColor(colors[Inteam[id] % colorsNum], 0, 100);
         printf("player%d", id);
         Setcolor();
-    }
-    else
+    } else
     {
         SetColor(colors[id % colorsNum], 0, 100);
         printf("player%d", id);
@@ -848,7 +870,7 @@ struct Grenade
 vector<Grenade> currentGrenade;
 void addGrenade(int sx, int sy, int ex, int ey, int dmg, int frm)
 {
-    currentGrenade.push_back((Grenade){sx, sy, ex, ey, dmg, frm, sx, sy, 0});
+    currentGrenade.push_back((Grenade) {sx, sy, ex, ey, dmg, frm, sx, sy, 0});
     return;
 }
 void updateGrenade()
@@ -861,11 +883,15 @@ void updateGrenade()
     for (vector<Grenade>::iterator it = currentGrenade.begin(); it != currentGrenade.end();)
     {
         Grenade &cur = *it;
-        if (dist(cur.cx, cur.cy, cur.ex, cur.ey) <= 1 || cur.cx < 1 || cur.cx > X || cur.cy < 1 || cur.cy > Y || cur.tmp >= (isGMode ? 10 : 6))
+        if (dist(cur.cx, cur.cy, cur.ex, cur.ey) <= 1 || cur.cx < 1 || cur.cx > X || cur.cy < 1 || cur.cy > Y ||
+            cur.tmp >= (isGMode ? 10 : 6))
         {
             for (int i = cur.ex - 3; i <= cur.ex + 3; i++)
                 for (int j = cur.ey - 3; j <= cur.ey + 3; j++)
-                    if (i >= 1 && i <= X && j >= 1 && j <= Y && mp[i][j].type == General && mp[i][j].tmp > 0 && (mode == Ffa || mode == Tdm && ifTeam[Inteam[mp[i][j].belong]].find(cur.frm) == ifTeam[Inteam[mp[i][j].belong]].end() || mp[i][j].belong == cur.frm))
+                    if (i >= 1 && i <= X && j >= 1 && j <= Y && mp[i][j].type == General && mp[i][j].tmp > 0 &&
+                        (mode == Ffa || mode == Tdm && ifTeam[Inteam[mp[i][j].belong]].find(cur.frm) ==
+                                                       ifTeam[Inteam[mp[i][j].belong]].end() ||
+                         mp[i][j].belong == cur.frm))
                     {
                         mp[i][j].tmp -= cur.dmg;
 
@@ -911,15 +937,13 @@ void printCurrentMiniMap(int bgmp, int id)
 #else
             SetColor(F_RED, 0, 1);
 #endif
-        }
-        else if (sm[bgmp][j] == 100)
+        } else if (sm[bgmp][j] == 100)
         {
             if ((mapmode == CFlag || mapmode == CPoints) || (mapmode == Pubg && fvf))
                 SetColor(colors[Inteam[id] % colorsNum], 0, 1);
             else
                 SetColor(colors[id % colorsNum], 0, 1);
-        }
-        else if (sm[bgmp][j] == 19)
+        } else if (sm[bgmp][j] == 19)
             SetColor(colors[id % colorsNum], 0, 1);
         else if (sm[bgmp][j] == -2)
             Setcolor();
@@ -930,8 +954,7 @@ void printCurrentMiniMap(int bgmp, int id)
 #else
             SetColor(F_PURPLE, 0, 2);
 #endif
-        }
-        else
+        } else
             SetColor(colors[sm[bgmp][j]], 0, 1);
         printf("%c ", miniMap[bgmp][j]);
         Setcolor();
@@ -948,8 +971,7 @@ void putmap(int sx, int sy, int id)
         startingX = startingY = 1;
         endingX = X;
         endingY = Y;
-    }
-    else
+    } else
     {
         startingX = max(1, sx - miniMapLevel * 5);
         endingX = min(X, sx + miniMapLevel * 5);
@@ -1010,11 +1032,13 @@ void putmap(int sx, int sy, int id)
                         currentSM = max(currentSM, 100);
                     }
                 }
-                if (mp[i][j].belong == id || ifTeam[Inteam[id]].find(mp[i][j].belong) != ifTeam[Inteam[id]].end() || isReplay == 2 && mp[i][j].belong != 0)
+                if (mp[i][j].belong == id || ifTeam[Inteam[id]].find(mp[i][j].belong) != ifTeam[Inteam[id]].end() ||
+                    isReplay == 2 && mp[i][j].belong != 0)
                 {
                     if (currentBlock != '!' && currentBlock != '+' && currentBlock != 'X')
                     {
-                        if ((mapmode != Pubg && mapmode != CFlag && mapmode != CPoints && mp[i][j].type == General && playerNum <= 8) || isReplay == 2 && mp[i][j].type == General)
+                        if ((mapmode != Pubg && mapmode != CFlag && mapmode != CPoints && mp[i][j].type == General &&
+                             playerNum <= 8) || isReplay == 2 && mp[i][j].type == General)
                             currentBlock = 'X';
                         else
                             currentBlock = 'O';
@@ -1036,7 +1060,8 @@ void putmap(int sx, int sy, int id)
                 }
                 if (fog[i][j])
                 {
-                    if (currentBlock != '!' && currentBlock != '+' && currentBlock != 'X' && !(currentBlock == 'O' && currentSM != -2))
+                    if (currentBlock != '!' && currentBlock != '+' && currentBlock != 'X' &&
+                        !(currentBlock == 'O' && currentSM != -2))
                     {
                         currentBlock = 'F';
                         currentSM = -1;
@@ -1044,8 +1069,7 @@ void putmap(int sx, int sy, int id)
                 }
             }
         }
-    }
-    else if (!isCleared && !isMiniMap)
+    } else if (!isCleared && !isMiniMap)
     {
         isCleared = true;
         clearing = true;
@@ -1080,8 +1104,7 @@ void putmap(int sx, int sy, int id)
                         if (!lft)
                             printf("-"), lft = true;
                         printf("-----");
-                    }
-                    else
+                    } else
                     {
                         if (!lft)
                             printf(" "), lft = true;
@@ -1097,8 +1120,7 @@ void putmap(int sx, int sy, int id)
                     }
                 }
                 printf("\n");
-            }
-            else
+            } else
             {
                 lft = false;
                 for (int j = (starting ? 1 : (Y > 15 ? sy - 7 : 1)); j <= (starting ? 15 : (Y > 15 ? sy + 7 : Y)); j++)
@@ -1107,8 +1129,7 @@ void putmap(int sx, int sy, int id)
                         if (!lft)
                             printf(" "), lft = true;
                         printf("     ");
-                    }
-                    else
+                    } else
                     {
                         if (!lft)
                             printf(" "), lft = true;
@@ -1140,8 +1161,7 @@ void putmap(int sx, int sy, int id)
             {
                 if (!lineprinted && i >= 1 && i <= X)
                     printf("|"), lineprinted = true;
-            }
-            else
+            } else
             {
                 if (!lineprinted && i >= 1 && i <= X)
                     printf(" "), lineprinted = true;
@@ -1164,8 +1184,7 @@ void putmap(int sx, int sy, int id)
                 }
                 printf("<G> ");
                 Setcolor();
-            }
-            else
+            } else
             {
                 if (sx == i && sy == j && !(mapmode == Pubg || mapmode == CFlag || mapmode == CPoints))
                 {
@@ -1190,8 +1209,7 @@ void putmap(int sx, int sy, int id)
                             printf("████");
                         else
                             printf("    ");
-                    }
-                    else if (mp[i][j].type == Wall)
+                    } else if (mp[i][j].type == Wall)
                         printf("####");
                     else if (mp[i][j].type == General)
                     {
@@ -1200,8 +1218,7 @@ void putmap(int sx, int sy, int id)
                             printf("<");
                             getnum(mp[i][j].tmp);
                             printf(">");
-                        }
-                        else
+                        } else
                         {
                             if ((mapmode == 7 || mapmode == 6) && mode == Tdm || mapmode == Pubg && fvf)
                                 SetColor(colors[Inteam[mp[i][j].belong] % colorsNum], 0, 100);
@@ -1213,36 +1230,30 @@ void putmap(int sx, int sy, int id)
                             getnum(mp[i][j].tmp);
                             printf("}");
                         }
-                    }
-                    else if (mp[i][j].type == Land)
+                    } else if (mp[i][j].type == Land)
                     {
                         printf(" ");
                         getnum(mp[i][j].tmp);
                         printf(" ");
-                    }
-                    else if (mp[i][j].type == Empty_city)
+                    } else if (mp[i][j].type == Empty_city)
                     {
                         printf("[");
                         getnum(mp[i][j].tmp);
                         printf("]");
-                    }
-                    else if (mp[i][j].type == 5)
+                    } else if (mp[i][j].type == 5)
                     {
                         printf("[");
                         getnum(mp[i][j].tmp);
                         printf("]");
-                    }
-                    else if (mp[i][j].type == 6)
+                    } else if (mp[i][j].type == 6)
                         printf(" +  ");
                     else if (mp[i][j].type == 8)
                     {
                         printf("<--l");
-                    }
-                    else if (mp[i][j].type == 7)
+                    } else if (mp[i][j].type == 7)
                     {
                         printf("[O] ");
-                    }
-                    else if (mp[i][j].type == 9)
+                    } else if (mp[i][j].type == 9)
                         printf("( %d)", mp[i][j].belong);
                     else if (mp[i][j].type == 10)
                         printf("(   )");
@@ -1265,8 +1276,7 @@ void putmap(int sx, int sy, int id)
                     else if (mp[i][j].type == 19)
                         printf("{F}");
                     Setcolor();
-                }
-                else
+                } else
                 {
                     if (mp[i][j].type == Empty_land)
                     {
@@ -1285,13 +1295,11 @@ void putmap(int sx, int sy, int id)
 #endif
                                 printf("████");
                                 Setcolor();
-                            }
-                            else
+                            } else
                             {
                                 printf("    ");
                             }
-                        }
-                        else
+                        } else
                         {
 #ifdef _WIN32
                             SetColor(0xf, 0xf, 1);
@@ -1301,15 +1309,13 @@ void putmap(int sx, int sy, int id)
                             printf("████");
                             Setcolor();
                         }
-                    }
-                    else if (mp[i][j].type == Wall)
+                    } else if (mp[i][j].type == Wall)
                     {
                         if (sight[id][i][j])
                             printf("####");
                         else
                             printf("????");
-                    }
-                    else if (mp[i][j].type == General)
+                    } else if (mp[i][j].type == General)
                     {
                         if (ifgetflag[mp[i][j].belong])
                         {
@@ -1318,8 +1324,7 @@ void putmap(int sx, int sy, int id)
                             getnum(mp[i][j].tmp);
                             printf(">");
                             Setcolor();
-                        }
-                        else if (sight[id][i][j])
+                        } else if (sight[id][i][j])
                         {
                             SetColor(colors[mp[i][j].belong % colorsNum], 0, 1);
                             if ((mapmode == CFlag || mapmode == CPoints) && mode == Tdm || mapmode == Pubg && fvf)
@@ -1328,8 +1333,7 @@ void putmap(int sx, int sy, int id)
                             getnum(mp[i][j].tmp);
                             printf("}");
                             Setcolor();
-                        }
-                        else
+                        } else
                         {
                             if (fog[i][j])
                                 printf("████");
@@ -1346,8 +1350,7 @@ void putmap(int sx, int sy, int id)
                                 Setcolor();
                             }
                         }
-                    }
-                    else if (mp[i][j].type == Land)
+                    } else if (mp[i][j].type == Land)
                     {
                         if (sight[id][i][j])
                         {
@@ -1356,8 +1359,7 @@ void putmap(int sx, int sy, int id)
                             getnum(mp[i][j].tmp);
                             printf(" ");
                             Setcolor();
-                        }
-                        else
+                        } else
                         {
                             if (fog[i][j])
                                 printf("████");
@@ -1374,19 +1376,16 @@ void putmap(int sx, int sy, int id)
                                 Setcolor();
                             }
                         }
-                    }
-                    else if (mp[i][j].type == Empty_city)
+                    } else if (mp[i][j].type == Empty_city)
                     {
                         if (sight[id][i][j])
                         {
                             printf("[");
                             getnum(mp[i][j].tmp);
                             printf("]");
-                        }
-                        else
+                        } else
                             printf("????");
-                    }
-                    else if (mp[i][j].type == 5)
+                    } else if (mp[i][j].type == 5)
                     {
                         if (sight[id][i][j])
                         {
@@ -1395,11 +1394,9 @@ void putmap(int sx, int sy, int id)
                             getnum(mp[i][j].tmp);
                             printf("]");
                             Setcolor();
-                        }
-                        else
+                        } else
                             printf("????");
-                    }
-                    else if (mp[i][j].type == 6)
+                    } else if (mp[i][j].type == 6)
                     {
                         if (sight[id][i][j])
                             printf(" +  ");
@@ -1417,8 +1414,7 @@ void putmap(int sx, int sy, int id)
                             printf("████");
                             Setcolor();
                         }
-                    }
-                    else if (mp[i][j].type == 8)
+                    } else if (mp[i][j].type == 8)
                     {
                         if (sight[id][i][j])
                             printf("<--l");
@@ -1436,8 +1432,7 @@ void putmap(int sx, int sy, int id)
                             printf("████");
                             Setcolor();
                         }
-                    }
-                    else if (mp[i][j].type == 7)
+                    } else if (mp[i][j].type == 7)
                     {
                         if (sight[id][i][j])
                             printf("[O] ");
@@ -1455,8 +1450,7 @@ void putmap(int sx, int sy, int id)
                             printf("████");
                             Setcolor();
                         }
-                    }
-                    else if (mp[i][j].type == 9)
+                    } else if (mp[i][j].type == 9)
                         printf("( %d)", mp[i][j].belong);
                     else if (mp[i][j].type == 10)
                         printf("(  )");
@@ -1478,8 +1472,7 @@ void putmap(int sx, int sy, int id)
                             printf("████");
                             Setcolor();
                         }
-                    }
-                    else if (mp[i][j].type == 12)
+                    } else if (mp[i][j].type == 12)
                     {
                         if (sight[id][i][j])
                             printf("{O} ");
@@ -1497,8 +1490,7 @@ void putmap(int sx, int sy, int id)
                             printf("████");
                             Setcolor();
                         }
-                    }
-                    else if (mp[i][j].type == 13)
+                    } else if (mp[i][j].type == 13)
                     {
                         if (sight[id][i][j])
                             printf("<==I");
@@ -1516,8 +1508,7 @@ void putmap(int sx, int sy, int id)
                             printf("████");
                             Setcolor();
                         }
-                    }
-                    else if (mp[i][j].type == 14)
+                    } else if (mp[i][j].type == 14)
                     {
                         if (sight[id][i][j])
                             printf("[L] ");
@@ -1535,8 +1526,7 @@ void putmap(int sx, int sy, int id)
                             printf("████");
                             Setcolor();
                         }
-                    }
-                    else if (mp[i][j].type == 15)
+                    } else if (mp[i][j].type == 15)
                     {
                         if (sight[id][i][j])
                             printf("[C] ");
@@ -1554,8 +1544,7 @@ void putmap(int sx, int sy, int id)
                             printf("████");
                             Setcolor();
                         }
-                    }
-                    else if (mp[i][j].type == 16)
+                    } else if (mp[i][j].type == 16)
                     {
                         if (sight[id][i][j])
                             printf("{C} ");
@@ -1573,8 +1562,7 @@ void putmap(int sx, int sy, int id)
                             printf("████");
                             Setcolor();
                         }
-                    }
-                    else if (mp[i][j].type == 17)
+                    } else if (mp[i][j].type == 17)
                     {
                         if (sight[id][i][j])
                             printf("{2X}");
@@ -1592,8 +1580,7 @@ void putmap(int sx, int sy, int id)
                             printf("████");
                             Setcolor();
                         }
-                    }
-                    else if (mp[i][j].type == 18)
+                    } else if (mp[i][j].type == 18)
                     {
                         if (sight[id][i][j])
                             printf("[F] ");
@@ -1611,8 +1598,7 @@ void putmap(int sx, int sy, int id)
                             printf("████");
                             Setcolor();
                         }
-                    }
-                    else if (mp[i][j].type == 19)
+                    } else if (mp[i][j].type == 19)
                     {
                         if (sight[id][i][j])
                             printf("{F} ");
@@ -1630,8 +1616,7 @@ void putmap(int sx, int sy, int id)
                             printf("████");
                             Setcolor();
                         }
-                    }
-                    else if (mp[i][j].type == 20)
+                    } else if (mp[i][j].type == 20)
                     {
                         if (mp[i][j].belong)
                             SetColor(colors[mp[i][j].belong % colorsNum], 0, 100);
@@ -1640,8 +1625,7 @@ void putmap(int sx, int sy, int id)
                         printf("]");
                         if (mp[i][j].belong)
                             Setcolor();
-                    }
-                    else if (mp[i][j].type == Send)
+                    } else if (mp[i][j].type == Send)
                     {
                         if (sight[id][i][j])
                             printf("<S> ");
@@ -1659,8 +1643,7 @@ void putmap(int sx, int sy, int id)
                             printf("████");
                             Setcolor();
                         }
-                    }
-                    else if (mp[i][j].type == Grrenade)
+                    } else if (mp[i][j].type == Grrenade)
                     {
                         if (sight[id][i][j])
                             printf("<G> ");
@@ -1678,8 +1661,7 @@ void putmap(int sx, int sy, int id)
                             printf("████");
                             Setcolor();
                         }
-                    }
-                    else if (mp[i][j].type == Door)
+                    } else if (mp[i][j].type == Door)
                     {
                         SetColor(colors[randnum(0, colorsNum - 1)], 0, 100);
                         printf("(**)");
@@ -1715,8 +1697,7 @@ void putmap(int sx, int sy, int id)
                     if (!lft)
                         printf("-"), lft = true;
                     printf("-----");
-                }
-                else
+                } else
                 {
                     if (!lft)
                         printf(" "), lft = true;
@@ -1733,8 +1714,7 @@ void putmap(int sx, int sy, int id)
                 Setcolor();
             }
             printf("\n");
-        }
-        else
+        } else
         {
             lft = false;
             for (int j = (starting ? 1 : (Y > 15 ? sy - 7 : 1)); j <= (starting ? 15 : (Y > 15 ? sy + 7 : Y)); j++)
@@ -1743,8 +1723,7 @@ void putmap(int sx, int sy, int id)
                     if (!lft)
                         printf(" "), lft = true;
                     printf("     ");
-                }
-                else
+                } else
                 {
                     if (!lft)
                         printf(" "), lft = true;
@@ -1778,9 +1757,7 @@ void putmap(int sx, int sy, int id)
                 {
                     score[mp[i][j].belong].sco += mp[i][j].tmp;
                     score[mp[i][j].belong].lnd++;
-                }
-                else
-                    ;
+                } else;
     else
     {
         for (int i = 1; i <= teamNum; i++)
@@ -1816,13 +1793,12 @@ void putmap(int sx, int sy, int id)
                 printf("team%d    %d %d\n", score[i].id, score[i].sco, score[i].lnd);
                 Setcolor();
             }
-        }
-        else
+        } else
         {
             double playerAverageScore = 0.0;
             for (int i = 1; i <= playerNum; i++)
                 playerAverageScore += playerScore[i];
-            playerAverageScore /= (double)playerNum;
+            playerAverageScore /= (double) playerNum;
             int team1 = 0, team2 = 0;
             double playerMaxScore = 0.0, playerMinScore = 100.0;
             for (int i = 1; i <= playerNum; i++)
@@ -1835,8 +1811,11 @@ void putmap(int sx, int sy, int id)
                 if (!fvf)
                 {
                     SetColor(colors[score[i].id % colorsNum], 0, 1);
-                    playerScore[score[i].id] += max(0.0, playerTkn[score[i].id] == 0 ? 0.0 : (double)playerDmg[score[i].id] / (double)playerTkn[score[i].id]);
-                    printf("player%d    %d %d %.2lf", score[i].id, score[i].sco, score[i].lnd, playerScore[score[i].id]);
+                    playerScore[score[i].id] += max(0.0, playerTkn[score[i].id] == 0 ? 0.0 :
+                                                         (double) playerDmg[score[i].id] /
+                                                         (double) playerTkn[score[i].id]);
+                    printf("player%d    %d %d %.2lf", score[i].id, score[i].sco, score[i].lnd,
+                           playerScore[score[i].id]);
                     if (mode == 2)
                         printf("    team%d", Inteam[score[i].id]);
                     if (playerScore[score[i].id] >= playerAverageScore)
@@ -1846,21 +1825,22 @@ void putmap(int sx, int sy, int id)
 #else
                         SetColor(F_GREEN, 0, 1);
 #endif
-                        printf(" +%.1lf%%", (playerScore[score[i].id] - playerAverageScore) / (playerMaxScore - playerAverageScore) * 100.0);
-                    }
-                    else
+                        printf(" +%.1lf%%",
+                               (playerScore[score[i].id] - playerAverageScore) / (playerMaxScore - playerAverageScore) *
+                               100.0);
+                    } else
                     {
 #ifdef _WIN32
                         SetColor(0xc, 0, 1);
 #else
                         SetColor(F_RED, 0, 1);
 #endif
-                        printf(" -%.1lf%%", -(playerScore[score[i].id] - playerAverageScore) / -(playerMinScore - playerAverageScore) * 100.0);
+                        printf(" -%.1lf%%", -(playerScore[score[i].id] - playerAverageScore) /
+                                            -(playerMinScore - playerAverageScore) * 100.0);
                     }
                     printf("\n");
                     Setcolor();
-                }
-                else
+                } else
                 {
                     if (score[i].sco > 0 && Inteam[score[i].id] == 1)
                         team1++;
@@ -1878,8 +1858,7 @@ void putmap(int sx, int sy, int id)
                 Setcolor();
             }
         }
-    }
-    else
+    } else
     {
         for (int i = 1; i <= teamNum; i++)
             nflagscore[i].pos = i, nflagscore[i].score = flagScore[i];
@@ -1907,6 +1886,10 @@ void putmap(int sx, int sy, int id)
     }
     if (isPaint)
         printf("涂色模式还剩 %d 回合\n", paintRemainTime);
+    if (isZombie)
+    {
+        printf("Zombie模式还剩 %d 回合\n", zombieRemainTime);
+    }
     if (isGz)
         printf("您已阵亡，观战中……\n");
     if (isHaveSend[id])
@@ -1946,7 +1929,6 @@ struct Player
     int selectedx, selectedy, playerid;
     bool halfselect, isbot;
     int sx, sy;
-    int inteam;
     bool flag[105][105];
     queue<pair<int, int> > q;
     void botit()
@@ -2004,8 +1986,16 @@ struct Player
     {
         if (isPaint)
             return;
-        if (mode != 2)
+        if (mode != 2 || isZombie)
         {
+            if (isZombie)
+            {
+                if (Inteam[playerid] == 2)
+                {
+                    switchTeamTo(pid, 2);
+                    return;
+                }
+            }
             for (int i = 1; i <= X; i++)
                 for (int j = 1; j <= Y; j++)
                     if (mp[i][j].belong == pid)
@@ -2026,7 +2016,8 @@ struct Player
     }
     void updMovement(node *dp, node *dt, int *opt, int tmp, bool isKt)
     {
-        if (mode == 2 && (dt->type == General || dt->type == Land || dt->type == 5) && dt->belong != playerid && ifTeam[Inteam[playerid]].find(dt->belong) != ifTeam[Inteam[playerid]].end())
+        if (mode == 2 && (dt->type == General || dt->type == Land || dt->type == 5) && dt->belong != playerid &&
+            ifTeam[Inteam[playerid]].find(dt->belong) != ifTeam[Inteam[playerid]].end())
             return;
         if (mapmode == 5 && isKt)
             return;
@@ -2050,8 +2041,12 @@ struct Player
                 {
                     dt->tmp = moved - dt->tmp;
                     if (dt->type == General)
-                        dt->type = City, kil(dt->belong);
-                    else
+                    {
+                        if (isZombie && Inteam[playerid] == 2)
+                            kil(dt->belong);
+                        else
+                            dt->type = City, kil(dt->belong);
+                    } else
                     {
                         dt->belong = playerid;
                         if (dt->type == Empty_land)
@@ -2059,31 +2054,39 @@ struct Player
                         if (dt->type == Empty_city)
                             dt->type = City;
                     }
-                }
-                else
+                } else
                     dt->tmp -= moved;
             }
             *opt += tmp;
-        }
-        else
+        } else
         {
             if (dt->type == General)
             {
-                int dmg1 = max(0, int(double(dp->tmp) * (1.0 + double(playeratk[playerid]) / 10.0) - double(playerac[dt->belong]) * 10.0));
-                int dmg2 = max(0, int(double(dt->tmp) * (1.0 + double(playeratk[dt->belong]) / 10.0) - double(playerac[playerid]) * 10.0));
+                int dmg1 = max(0, int(double(dp->tmp) * (1.0 + double(playeratk[playerid]) / 10.0) -
+                                      double(playerac[dt->belong]) * 10.0));
+                int dmg2 = max(0, int(double(dt->tmp) * (1.0 + double(playeratk[dt->belong]) / 10.0) -
+                                      double(playerac[playerid]) * 10.0));
                 if (isChess)
                 {
                     dmg1 /= 4;
                     dmg2 /= 4;
                 }
-                dp->tmp -= dmg2;
-                dt->tmp -= dmg1;
-                if (dp->tmp <= 0 && mapmode != 6 && mapmode != 7)
-                    dp->type = Empty_land, dp->tmp = 0, dp->belong = 0, alivePlayerNum--, getObject(dp->belong, dt->belong);
-                if (dt->tmp <= 0 && mapmode != 6 && mapmode != 7)
-                    dt->type = Empty_land, dt->tmp = 0, dt->belong = 0, alivePlayerNum--, getObject(dt->belong, dp->belong);
-            }
-            else
+                if (isZombie && Inteam[playerid] == 2 && dt->tmp <= dmg1)
+                    switchTeamTo(dt->belong, 2);
+                else if (isZombie && Inteam[dt->belong] == 2 && dp->tmp <= dmg2)
+                    switchTeamTo(playerid, 2);
+                else
+                {
+                    dp->tmp -= dmg2;
+                    dt->tmp -= dmg1;
+                    if (dp->tmp <= 0 && mapmode != 6 && mapmode != 7)
+                        dp->type = Empty_land, dp->tmp = 0, dp->belong = 0, alivePlayerNum--, getObject(dp->belong,
+                                                                                                        dt->belong);
+                    if (dt->tmp <= 0 && mapmode != 6 && mapmode != 7)
+                        dt->type = Empty_land, dt->tmp = 0, dt->belong = 0, alivePlayerNum--, getObject(dt->belong,
+                                                                                                        dp->belong);
+                }
+            } else
             {
                 if (dt->type == 6)
                     dp->tmp += 10, dt->type = Empty_land, aliveObjectNum--;
@@ -2124,8 +2127,7 @@ struct Player
                         news[newsr].opt = 1;
                         news[newsr].remtime = 50;
                         newsr++;
-                    }
-                    else if (dt->belong == Inteam[playerid] && ifgetflag[playerid])
+                    } else if (dt->belong == Inteam[playerid] && ifgetflag[playerid])
                     {
                         mp[flg[ifgetflag[playerid]].sx][flg[ifgetflag[playerid]].sy].type = Flag, mp[flg[ifgetflag[playerid]].sx][flg[ifgetflag[playerid]].sy].belong = flg[ifgetflag[playerid]].belong;
                         flagScore[Inteam[playerid]]++;
@@ -2136,8 +2138,7 @@ struct Player
                         ifgetflag[playerid] = 0;
                     }
                     return;
-                }
-                else if (dt->type == 10)
+                } else if (dt->type == 10)
                     return;
                 if (dt->type == Door)
                 {
@@ -2164,7 +2165,8 @@ struct Player
     }
     void moveup()
     {
-        if (mp[selectedx][selectedy].belong == playerid && mp[selectedx - 1][selectedy].type != Wall && mp[selectedx][selectedy].tmp > 1)
+        if (mp[selectedx][selectedy].belong == playerid && mp[selectedx - 1][selectedy].type != Wall &&
+            mp[selectedx][selectedy].tmp > 1)
         {
             node *dp = &mp[selectedx][selectedy], *dt = &mp[selectedx - 1][selectedy];
             updMovement(dp, dt, &selectedx, -1, isKt[selectedx - 1][selectedy]);
@@ -2173,7 +2175,8 @@ struct Player
     }
     void movedown()
     {
-        if (mp[selectedx][selectedy].belong == playerid && mp[selectedx + 1][selectedy].type != Wall && mp[selectedx][selectedy].tmp > 1)
+        if (mp[selectedx][selectedy].belong == playerid && mp[selectedx + 1][selectedy].type != Wall &&
+            mp[selectedx][selectedy].tmp > 1)
         {
             node *dp = &mp[selectedx][selectedy], *dt = &mp[selectedx + 1][selectedy];
             updMovement(dp, dt, &selectedx, 1, isKt[selectedx + 1][selectedy]);
@@ -2182,7 +2185,8 @@ struct Player
     }
     void moveleft()
     {
-        if (mp[selectedx][selectedy].belong == playerid && mp[selectedx][selectedy - 1].type != Wall && mp[selectedx][selectedy].tmp > 1)
+        if (mp[selectedx][selectedy].belong == playerid && mp[selectedx][selectedy - 1].type != Wall &&
+            mp[selectedx][selectedy].tmp > 1)
         {
             node *dp = &mp[selectedx][selectedy], *dt = &mp[selectedx][selectedy - 1];
             updMovement(dp, dt, &selectedy, -1, isKt[selectedx][selectedy - 1]);
@@ -2191,7 +2195,8 @@ struct Player
     }
     void moveright()
     {
-        if (mp[selectedx][selectedy].belong == playerid && mp[selectedx][selectedy + 1].type != Wall && mp[selectedx][selectedy].tmp > 1)
+        if (mp[selectedx][selectedy].belong == playerid && mp[selectedx][selectedy + 1].type != Wall &&
+            mp[selectedx][selectedy].tmp > 1)
         {
             node *dp = &mp[selectedx][selectedy], *dt = &mp[selectedx][selectedy + 1];
             updMovement(dp, dt, &selectedy, 1, isKt[selectedx][selectedy + 1]);
@@ -2236,8 +2241,7 @@ struct Player
                             outsideAnsX = i;
                             outsideAnsY = j;
                         }
-                    }
-                    else
+                    } else
                     {
                         if (mp[i][j].tmp > insideAnsTmp)
                         {
@@ -2251,8 +2255,7 @@ struct Player
         {
             sx = outsideAnsX;
             sy = outsideAnsY;
-        }
-        else
+        } else
         {
             sx = insideAnsX;
             sy = insideAnsY;
@@ -2289,14 +2292,15 @@ struct Player
         {
             for (int i = x - tmp; i <= x + tmp; i++)
                 for (int j = y - tmp; j <= y + tmp; j++)
-                    if (i >= 1 && i <= X && j >= 1 && j <= Y && sight[playerid][i][j] && mp[i][j].type == General && (mode == Ffa || mode == Tdm && Inteam[mp[i][j].belong] != Inteam[playerid]) && mp[i][j].belong != playerid)
+                    if (i >= 1 && i <= X && j >= 1 && j <= Y && sight[playerid][i][j] && mp[i][j].type == General &&
+                        (mode == Ffa || mode == Tdm && Inteam[mp[i][j].belong] != Inteam[playerid]) &&
+                        mp[i][j].belong != playerid)
                     {
                         if (playerGrenade[playerid] > 0)
                         {
                             playerGrenade[playerid]--;
                             addGrenade(x, y, i, j, 20, playerid);
-                        }
-                        else
+                        } else
                         {
                             i = x + 10;
                             break;
@@ -2315,7 +2319,9 @@ struct Player
             int i = *it;
             it = tmpI.erase(it);
             int px = x + dir[i][0], py = y + dir[i][1];
-            if (px >= 1 && px <= X && py >= 1 && py <= Y && mp[px][py].type != Wall && mp[x][y].tmp > 1 && !flag[px][py] && !fog[px][py] && mp[px][py].type != 20 && (mp[px][py].type != Empty_city || mp[px][py].type == Empty_city && mp[x][y].tmp > mp[px][py].tmp))
+            if (px >= 1 && px <= X && py >= 1 && py <= Y && mp[px][py].type != Wall && mp[x][y].tmp > 1 &&
+                !flag[px][py] && !fog[px][py] && mp[px][py].type != 20 &&
+                (mp[px][py].type != Empty_city || mp[px][py].type == Empty_city && mp[x][y].tmp > mp[px][py].tmp))
             {
                 // break;
                 int currentTmp; //攻击优先级
@@ -2329,8 +2335,7 @@ struct Player
                         currentTmp = 5;
                     else
                         currentTmp = 3;
-                }
-                else
+                } else
                     currentTmp = 1;
                 if (currentTmp > ansTmp)
                 {
@@ -2371,8 +2376,7 @@ struct Team
             if (members[i]->isbot)
             {
                 members[i]->botmove();
-            }
-            else
+            } else
                 members[i]->playermove(playeraction);
         }
         return;
@@ -2380,7 +2384,6 @@ struct Team
 } team[105];
 void addPlayerToTeam(int pid, int tid)
 {
-    player[pid].inteam = tid;
     ifTeam[tid].insert(pid);
     team[tid].membernum++;
     Inteam[pid] = tid;
@@ -2403,13 +2406,23 @@ void teaming()
                 addPlayerToTeam(i, 2);
         return;
     }
+    if (isZombie)
+    {
+        motherID = randnum(1, playerNum);
+        addPlayerToTeam(motherID, 2);
+        for (int i = 1; i <= playerNum; i++)
+            if (i != motherID)
+                addPlayerToTeam(i, 1);
+        return;
+    }
     for (int i = 1; i <= playerNum; i++)
     {
-        player[i].inteam = (i + (playerNum / teamNum) - 1) / (playerNum / teamNum);
         ifTeam[(i + (playerNum / teamNum) - 1) / (playerNum / teamNum)].insert(i);
         team[(i + (playerNum / teamNum) - 1) / (playerNum / teamNum)].membernum++;
         Inteam[i] = (i + (playerNum / teamNum) - 1) / (playerNum / teamNum);
-        team[(i + (playerNum / teamNum) - 1) / (playerNum / teamNum)].members[team[(i + (playerNum / teamNum) - 1) / (playerNum / teamNum)].membernum] = &player[i];
+        team[(i + (playerNum / teamNum) - 1) / (playerNum / teamNum)].members[team[(i + (playerNum / teamNum) - 1) /
+                                                                                   (playerNum /
+                                                                                    teamNum)].membernum] = &player[i];
     }
     return;
 }
@@ -2525,6 +2538,8 @@ void pubgConv()
         for (int j = 1; j <= Y; j++)
             if (mp[i][j].type == General)
                 mp[i][j].tmp = 100;
+    if (isZombie)
+        playermaxhp[motherID] = 150;
     return;
 }
 struct pnt
@@ -2565,7 +2580,8 @@ void readConfig()
 {
     ifstream infile;
     infile.open("config", ios::in);
-    infile >> X >> Y >> wallPr >> cityPr >> objectPr >> tpt >> playerNum >> teamNum >> dq >> ktTime >> pointsTime >> paintTime;
+    infile >> X >> Y >> wallPr >> cityPr >> objectPr >> tpt >> playerNum >> teamNum >> dq >> ktTime >> pointsTime
+           >> paintTime >> zombieTime;
     infile.close();
     return;
 }
@@ -2584,7 +2600,8 @@ void saveConfig()
             << dq << endl
             << ktTime << endl
             << pointsTime << endl
-            << paintTime << endl;
+            << paintTime << endl
+            << zombieTime << endl;
     outfile.close();
     return;
 }
@@ -2611,8 +2628,7 @@ void saveMap()
         for (int i = 0; i < colorsNum; i++)
             outfile << colors[i] << " ";
         outfile << endl;
-    }
-    else
+    } else
         outfile.open("Map", ios::out | ios::app);
     for (int i = 1; i <= X; i++)
         for (int j = 1; j <= Y; j++)
@@ -2723,13 +2739,11 @@ void commandLine()
             else if (myto_int(tmp[2]) == 0)
             {
                 currentPlayer = getRandomAlivePlayer();
-            }
-            else if (myto_int(tmp[2]) < 1 || myto_int(tmp[2]) > playerNum)
+            } else if (myto_int(tmp[2]) < 1 || myto_int(tmp[2]) > playerNum)
                 cout << "ValueError";
             else
                 currentPlayer = myto_int(tmp[2]);
-        }
-        else if (tmp[1] == "makeselect")
+        } else if (tmp[1] == "makeselect")
         {
             if (tot != 4)
                 cout << "SyntaxError";
@@ -2760,12 +2774,10 @@ void commandLine()
                 {
                     player[pid].selectedx = px;
                     player[pid].selectedy = py;
-                }
-                else
+                } else
                     cout << "ValueError";
             }
-        }
-        else if (tmp[1] == "setbelong" || tmp[1] == "settype" || tmp[1] == "settmp")
+        } else if (tmp[1] == "setbelong" || tmp[1] == "settype" || tmp[1] == "settmp")
         {
             if (tot != 4)
                 cout << "SyntaxError";
@@ -2795,19 +2807,16 @@ void commandLine()
                         if (k == 0)
                             k = getRandomAlivePlayer();
                         mp[px][py].belong = k;
-                    }
-                    else if (tmp[1] == "settype")
-                        mp[px][py].type = (land_type)k;
+                    } else if (tmp[1] == "settype")
+                        mp[px][py].type = (land_type) k;
                     else if (tmp[1] == "settmp" && k >= 0)
                         mp[px][py].tmp = k;
                     else
                         cout << "ValueError";
-                }
-                else
+                } else
                     cout << "ValueError";
             }
-        }
-        else if (tmp[1] == "kill")
+        } else if (tmp[1] == "kill")
         {
             if (tot != 2 && tot != 3)
                 cout << "SyntaxError";
@@ -2835,8 +2844,7 @@ void commandLine()
                             }
                     if (mapmode != CFlag && mapmode != CPoints)
                         alivePlayerNum--;
-                }
-                else if (tot == 3)
+                } else if (tot == 3)
                 {
                     if (tmp[3] == "~")
                         b = currentPlayer;
@@ -2858,8 +2866,7 @@ void commandLine()
                                         i = X + 1;
                                         break;
                                     }
-                        }
-                        else
+                        } else
                         {
                             if (mapmode != Pubg)
                             {
@@ -2872,8 +2879,7 @@ void commandLine()
                                             break;
                                         }
                                 player[b].kil(a);
-                            }
-                            else
+                            } else
                             {
                                 for (int i = 1; i <= X; i++)
                                     for (int j = 1; j <= Y; j++)
@@ -2888,8 +2894,7 @@ void commandLine()
                     }
                 }
             }
-        }
-        else if (tmp[1] == "swapland")
+        } else if (tmp[1] == "swapland")
         {
             if (tot != 5)
                 cout << "SyntaxError";
@@ -2914,13 +2919,11 @@ void commandLine()
                 cout << "ValueError";
             else
                 swap(mp[xx1][yy1], mp[xx2][yy2]);
-        }
-        else if (tmp[1] == "clear")
+        } else if (tmp[1] == "clear")
         {
             system("cls");
             putmap(player[currentPlayer].selectedx, player[currentPlayer].selectedy, currentPlayer);
-        }
-        else if (tmp[1] == "setview")
+        } else if (tmp[1] == "setview")
         {
             if (tot == 4 || tot == 5)
             {
@@ -2946,24 +2949,21 @@ void commandLine()
                     if (pid < 1 || pid > playerNum)
                     {
                         cout << "ValueError";
-                    }
-                    else if (tmp[5] == "-a")
+                    } else if (tmp[5] == "-a")
                     {
                         for (int i = 1; i <= X; i++)
                             for (int j = 1; j <= Y; j++)
                             {
                                 sight[pid][i][j] = true;
                             }
-                    }
-                    else if (tmp[5] == "-A")
+                    } else if (tmp[5] == "-A")
                     {
                         for (int i = 1; i <= X; i++)
                             for (int j = 1; j <= Y; j++)
                             {
                                 sight[pid][i][j] = false;
                             }
-                    }
-                    else
+                    } else
                     {
                         cout << "SyntaxError";
                     }
@@ -2974,13 +2974,11 @@ void commandLine()
                 {
                     sight[pid][xx1][yy1] ^= 1;
                 }
-            }
-            else
+            } else
             {
                 cout << "SyntaxError";
             }
-        }
-        else
+        } else
         {
             cout << "Undefined";
         }
@@ -3127,9 +3125,9 @@ int main()
     {
         while (1)
         {
-            printf("选择模式：1 = Free For All， 2 = Team Deathmatch， 3 = 50v50， 4 = Boss， 5 = Event\n");
+            printf("选择模式：1 = Free For All， 2 = Team Deathmatch， 3 = 50v50， 4 = Boss， 5 = Event, 6 = Zombie\n");
             scanf("%d", &mode);
-            if (mode == 1 || mode == 2 || mode == 3 || mode == 4 || mode == 5)
+            if (mode == 1 || mode == 2 || mode == 3 || mode == 4 || mode == 5 || mode == 6)
                 break;
         }
         if (mode == 3)
@@ -3155,6 +3153,12 @@ int main()
             isEvent = true;
             mode = Ffa;
         }
+        if (mode == Zombie)
+        {
+            isZombie = true;
+            mode = Tdm;
+            teamNum = 2;
+        }
         while (1)
         {
             printf("选择地图：1 = 随机地图， 2 = 空白地图， 3 = 迷宫地图， 4 = 端午地图， 5  = 吃鸡地图， 6 = 夺旗地图， 7 = 占点地图， 8 = 涂色地图，\n9 = 堑壕地图， 10 = 棋盘地图\n");
@@ -3167,6 +3171,16 @@ int main()
             if (isBoss == 1 && mapmode == 7)
             {
                 printf("抱歉，占点地图不支持Boss模式。\n");
+                continue;
+            }
+            if (isZombie && mapmode == 6)
+            {
+                printf("抱歉，夺旗地图不支持Zombie模式。\n");
+                continue;
+            }
+            if (isZombie && mapmode == 7)
+            {
+                printf("抱歉，占点地图不支持Zombie模式。\n");
                 continue;
             }
             if (isEvent && mapmode == 6)
@@ -3189,7 +3203,8 @@ int main()
                 printf("抱歉，占点地图不支持FFA模式。\n");
                 continue;
             }
-            if (mapmode == 1 || mapmode == 2 || mapmode == 3 || mapmode == 4 || mapmode == 5 || mapmode == 6 || mapmode == 7 || mapmode == 8 || mapmode == 9 || mapmode == 10)
+            if (mapmode == 1 || mapmode == 2 || mapmode == 3 || mapmode == 4 || mapmode == 5 || mapmode == 6 ||
+                mapmode == 7 || mapmode == 8 || mapmode == 9 || mapmode == 10)
                 break;
         }
         int ifown;
@@ -3231,6 +3246,8 @@ int main()
             scanf("%d", &pointsTime);
             printf("请输入涂色地图的时间\n");
             scanf("%d", &paintTime);
+            printf("请输入Zombie模式的时间\n");
+            scanf("%d", &zombieTime);
             printf("是否保存配置文件？(1 = 是，2 = 否)\n");
             int tmp;
             scanf("%d", &tmp);
@@ -3351,8 +3368,8 @@ int main()
         infile >> _mode >> _mapmode >> fvf;
         for (int i = 0; i < colorsNum; i++)
             infile >> colors[i];
-        mode = (game_mode)_mode;
-        mapmode = (map_mode)_mapmode;
+        mode = (game_mode) _mode;
+        mapmode = (map_mode) _mapmode;
         if (X > 15 || Y > 15)
         {
             while (1)
@@ -3382,7 +3399,7 @@ int main()
                         i = X + 1;
                         break;
                     }
-                    mp[i][j].type = (land_type)tmpp;
+                    mp[i][j].type = (land_type) tmpp;
                 }
             if (isend)
                 break;
@@ -3462,6 +3479,8 @@ int main()
     }
     if (isPaint)
         paintRemainTime = paintTime;
+    if (isZombie)
+        zombieRemainTime = zombieTime;
     if (mode == 1)
     {
         while (alivePlayerNum > 1 && (!isPaint || isPaint && paintRemainTime > 0))
@@ -3558,21 +3577,17 @@ int main()
             {
                 if (miniMapLevel > 3)
                     miniMapLevel--;
-            }
-            else if ((X > 15 || Y > 15) && inp == 'E')
+            } else if ((X > 15 || Y > 15) && inp == 'E')
             {
                 if (miniMapLevel < 9)
                     miniMapLevel++;
-            }
-            else if (inp == 'C')
+            } else if (inp == 'C')
             {
                 commandLine();
-            }
-            else if (inp == 'F')
+            } else if (inp == 'F')
             {
                 currentPlayer = getRandomAlivePlayer();
-            }
-            else if (inp == 'G')
+            } else if (inp == 'G')
             {
                 for (int i = 1; i <= X; i++)
                     for (int j = 1; j <= Y; j++)
@@ -3583,8 +3598,7 @@ int main()
                             i = X + 1;
                             break;
                         }
-            }
-            else if (inp == 'I')
+            } else if (inp == 'I')
                 player[currentPlayer].selectedx--;
             else if (inp == 'K')
                 player[currentPlayer].selectedx++;
@@ -3612,13 +3626,17 @@ int main()
             for (int i = 1; i <= X; i++)
                 for (int j = 1; j <= Y; j++)
                 {
-                    if (((mp[i][j].type == General || mp[i][j].type == 5) && mapmode != 5 && mapmode != 6 && mapmode != CPoints) || (mp[i][j].type == General && (mapmode == 5 || mapmode == 6 || mapmode == CPoints) && mp[i][j].tmp < playermaxhp[mp[i][j].belong]))
+                    if (((mp[i][j].type == General || mp[i][j].type == 5) && mapmode != 5 && mapmode != 6 &&
+                         mapmode != CPoints) ||
+                        (mp[i][j].type == General && (mapmode == 5 || mapmode == 6 || mapmode == CPoints) &&
+                         mp[i][j].tmp < playermaxhp[mp[i][j].belong]))
                         mp[i][j].tmp++;
                     else if (mp[i][j].type == Land && turn % 15 == 0)
                         mp[i][j].tmp++;
                     for (int k = 1; k <= playerNum; k++)
                         sight[k][i][j] = false;
-                    if ((mapmode == 5 || mapmode == 6 || mapmode == CPoints) && mp[i][j].type == General && mp[i][j].tmp > playermaxhp[mp[i][j].belong])
+                    if ((mapmode == 5 || mapmode == 6 || mapmode == CPoints) && mp[i][j].type == General &&
+                        mp[i][j].tmp > playermaxhp[mp[i][j].belong])
                         mp[i][j].tmp = playermaxhp[mp[i][j].belong];
                 }
             for (int i = 1; i <= X; i++)
@@ -3633,8 +3651,7 @@ int main()
                                 for (int w = j - 2 - isHaveTs[currentPlayer]; w <= j + 2 + isHaveTs[currentPlayer]; w++)
                                     if (k >= 1 && k <= X && w >= 1 && w <= Y)
                                         sight[mp[i][j].belong][k][w] = true;
-                                    else
-                                        ;
+                                    else;
                         else
                             for (int px = i - 1; px <= i + 1; px++)
                                 for (int py = j - 1; py <= j + 1; py++)
@@ -3642,8 +3659,7 @@ int main()
                                     if (px >= 1 && px <= X && py >= 1 && py <= Y)
                                         sight[mp[i][j].belong][px][py] = true;
                                 }
-                    }
-                    else if (isGrenade[i][j])
+                    } else if (isGrenade[i][j])
                         for (int k = i - 2; k <= i + 2; k++)
                             for (int w = j - 2; w <= j + 2; w++)
                                 if (k >= 1 && k <= X && w >= 1 && w <= Y)
@@ -3665,7 +3681,8 @@ int main()
                     for (int j = 1; j <= Y; j++)
                         if (fog[i][j] && mp[i][j].type == General && mp[i][j].tmp >= 1)
                         {
-                            mp[i][j].tmp -= int(double(foglevel < 5 ? 10 : 50) * (1.0 - double(playerfh[mp[i][j].belong]) * 0.02));
+                            mp[i][j].tmp -= int(
+                                    double(foglevel < 5 ? 10 : 50) * (1.0 - double(playerfh[mp[i][j].belong]) * 0.02));
                             if (mp[i][j].tmp <= 0)
                                 mp[i][j].tmp = mp[i][j].belong = 0, alivePlayerNum--, mp[i][j].type = Empty_land;
                         }
@@ -3720,13 +3737,13 @@ int main()
                 playerLand[i] = 0;
             for (int i = 1; i <= X; i++)
                 for (int j = 1; j <= Y; j++)
-                    if ((mp[i][j].type == Land || mp[i][j].type == General || mp[i][j].type == City) && mp[i][j].tmp > 0)
+                    if ((mp[i][j].type == Land || mp[i][j].type == General || mp[i][j].type == City) &&
+                        mp[i][j].tmp > 0)
                         playerLand[mp[i][j].belong]++, maxLand = max(maxLand, playerLand[mp[i][j].belong]);
             if (maxLand == -1)
                 if (MessageBox(NULL, "没有玩家胜利。是否保存回放？", "欢呼", MB_OKCANCEL) == IDOK)
                     savereplay();
-                else
-                    ;
+                else;
             else
             {
                 for (int i = 1; i <= playerNum; i++)
@@ -3756,8 +3773,7 @@ int main()
         {
             if (MessageBox(NULL, "没有玩家胜利。是否保存回放？", "欢呼", MB_OKCANCEL) == IDOK)
                 savereplay();
-        }
-        else
+        } else
         {
             string opt = "player" + myto_string(winner) + "赢了！是否保存回放？";
             if (MessageBox(NULL, opt.c_str(), "欢呼", MB_OKCANCEL) == IDOK)
@@ -3767,7 +3783,8 @@ int main()
     }
     if (mapmode == 7)
         ifCanGenerateObject = true;
-    while (aliveTeamNum > 1 && (!isPaint || isPaint && paintRemainTime > 0))
+    while (aliveTeamNum > 1 && (!isPaint || isPaint && paintRemainTime > 0) &&
+           (!isZombie || isZombie && zombieRemainTime > 0))
     {
         if (isGMode)
             playerGrenade[currentPlayer] = 1;
@@ -3869,21 +3886,17 @@ int main()
         {
             if (miniMapLevel > 3)
                 miniMapLevel--;
-        }
-        else if ((X > 15 || Y > 15) && inp == 'E')
+        } else if ((X > 15 || Y > 15) && inp == 'E')
         {
             if (miniMapLevel < 9)
                 miniMapLevel++;
-        }
-        else if (inp == 'C')
+        } else if (inp == 'C')
         {
             commandLine();
-        }
-        else if (inp == 'F')
+        } else if (inp == 'F')
         {
             currentPlayer = getRandomAlivePlayer();
-        }
-        else if (inp == 'G')
+        } else if (inp == 'G')
         {
             for (int i = 1; i <= X; i++)
                 for (int j = 1; j <= Y; j++)
@@ -3894,8 +3907,7 @@ int main()
                         i = X + 1;
                         break;
                     }
-        }
-        else if (inp == 'I')
+        } else if (inp == 'I')
             player[currentPlayer].selectedx--;
         else if (inp == 'K')
             player[currentPlayer].selectedx++;
@@ -3922,49 +3934,51 @@ int main()
         for (int i = 1; i <= X; i++)
             for (int j = 1; j <= Y; j++)
             {
-                if (((mp[i][j].type == General || mp[i][j].type == 5) && mapmode != 5 && mapmode != 6 && mapmode != 7) || (mp[i][j].type == General && (mapmode == 5 || mapmode == 6 || mapmode == 7) && mp[i][j].tmp < playermaxhp[mp[i][j].belong]))
-                    mp[i][j].tmp += (mp[i][j].belong == bossID && mp[i][j].type == General ? playerNum - 1 : 1);
+                if (((mp[i][j].type == General || mp[i][j].type == 5) && mapmode != 5 && mapmode != 6 &&
+                     mapmode != 7) || (mp[i][j].type == General && (mapmode == 5 || mapmode == 6 || mapmode == 7) &&
+                                       mp[i][j].tmp < playermaxhp[mp[i][j].belong]))
+                    mp[i][j].tmp += (mp[i][j].belong == bossID && mp[i][j].type == General ? playerNum - 1 : (
+                            mp[i][j].belong == motherID ? 2 : 1));
                 else if (mp[i][j].type == Land && turn % 15 == 0)
                     mp[i][j].tmp += 1;
                 for (int k = 1; k <= playerNum; k++)
                     sight[k][i][j] = false;
-                if ((mapmode == 5 || mapmode == 6 || mapmode == 7) && mp[i][j].type == General && mp[i][j].tmp > playermaxhp[mp[i][j].belong])
+                if ((mapmode == 5 || mapmode == 6 || mapmode == 7) && mp[i][j].type == General &&
+                    mp[i][j].tmp > playermaxhp[mp[i][j].belong])
                     mp[i][j].tmp = playermaxhp[mp[i][j].belong];
             }
         for (int i = 1; i <= X; i++)
             for (int j = 1; j <= Y; j++)
                 if (mp[i][j].belong && mp[i][j].type != 20)
                 {
-                    for (int k = 1; k <= team[player[mp[i][j].belong].inteam].membernum; k++)
-                        sight[team[player[mp[i][j].belong].inteam].members[k]->playerid][i][j] = true;
+                    for (int k = 1; k <= team[Inteam[mp[i][j].belong]].membernum; k++)
+                        sight[team[Inteam[mp[i][j].belong]].members[k]->playerid][i][j] = true;
                     if ((mapmode == 5 || mapmode == 6 || mapmode == 7) && blindTimeRemain[mp[i][j].belong] > 0)
                         continue;
                     if (mp[i][j].type == Points || mp[i][j].type == Flag || mp[i][j].type == Empty_flag)
                         continue;
-                    if ((mapmode == 5 || mapmode == 6 || mapmode == 7) && player[mp[i][j].belong].inteam == player[currentPlayer].inteam)
+                    if ((mapmode == 5 || mapmode == 6 || mapmode == 7) &&
+                        Inteam[mp[i][j].belong] == Inteam[currentPlayer])
                         for (int k = i - 2 - isHaveTs[mp[i][j].belong]; k <= i + 2 + isHaveTs[mp[i][j].belong]; k++)
                             for (int w = j - 2 - isHaveTs[mp[i][j].belong]; w <= j + 2 + isHaveTs[mp[i][j].belong]; w++)
                                 if (k >= 1 && k <= X && w >= 1 && w <= Y)
-                                    for (int p = 1; p <= team[player[mp[i][j].belong].inteam].membernum; p++)
-                                        sight[team[player[mp[i][j].belong].inteam].members[p]->playerid][k][w] = true;
-                                else
-                                    ;
+                                    for (int p = 1; p <= team[Inteam[mp[i][j].belong]].membernum; p++)
+                                        sight[team[Inteam[mp[i][j].belong]].members[p]->playerid][k][w] = true;
+                                else;
                     for (int px = i - 1; px <= i + 1; px++)
                         for (int py = j - 1; py <= j + 1; py++)
                         {
                             if (px >= 1 && px <= X && py >= 1 && py <= Y)
-                                for (int k = 1; k <= team[player[mp[i][j].belong].inteam].membernum; k++)
-                                    sight[team[player[mp[i][j].belong].inteam].members[k]->playerid][px][py] = true;
+                                for (int k = 1; k <= team[Inteam[mp[i][j].belong]].membernum; k++)
+                                    sight[team[Inteam[mp[i][j].belong]].members[k]->playerid][px][py] = true;
                         }
-                }
-                else if (isGrenade[i][j] && Inteam[isGrenade[i][j]] == Inteam[currentPlayer])
+                } else if (isGrenade[i][j] && Inteam[isGrenade[i][j]] == Inteam[currentPlayer])
                     for (int k = i - 2; k <= i + 2; k++)
                         for (int w = j - 2; w <= j + 2; w++)
                             if (k >= 1 && k <= X && w >= 1 && w <= Y)
                                 for (int p = 1; p <= team[Inteam[isGrenade[i][j]]].membernum; p++)
                                     sight[team[Inteam[isGrenade[i][j]]].members[p]->playerid][k][w] = true;
-                            else
-                                ;
+                            else;
         if (mp[player[currentPlayer].selectedx][player[currentPlayer].selectedy].belong != currentPlayer)
             for (int i = 1; i <= X; i++)
                 for (int j = 1; j <= Y; j++)
@@ -3975,7 +3989,8 @@ int main()
                         i = X + 1;
                         break;
                     }
-        if (rm == 1 && mapmode == 5 && aliveObjectNum < objectNum && aliveObjectNum < int(double(X * Y) * objectPr) && (!fvf || (fvf && foglevel % 3 == 0)))
+        if (rm == 1 && mapmode == 5 && aliveObjectNum < objectNum && aliveObjectNum < int(double(X * Y) * objectPr) &&
+            (!fvf || (fvf && foglevel % 3 == 0)))
             generateObject();
         if ((mapmode == 6 || mapmode == 7) && ifCanGenerateObject && aliveObjectNum < objectNum)
         {
@@ -3987,7 +4002,8 @@ int main()
                 for (int j = 1; j <= Y; j++)
                     if (fog[i][j] && mp[i][j].type == General && mp[i][j].tmp >= 1)
                     {
-                        mp[i][j].tmp -= int(double(foglevel < 5 ? 10 : 50) * (1.0 - double(playerfh[mp[i][j].belong]) * 0.02));
+                        mp[i][j].tmp -= int(
+                                double(foglevel < 5 ? 10 : 50) * (1.0 - double(playerfh[mp[i][j].belong]) * 0.02));
                         if (mp[i][j].tmp <= 0)
                             mp[i][j].tmp = mp[i][j].belong = 0, alivePlayerNum--, mp[i][j].type = Empty_land;
                     }
@@ -4007,7 +4023,7 @@ int main()
                     continue;
                 for (int j = 1; j <= X; j++)
                     for (int k = 1; k <= Y; k++)
-                        if (player[mp[j][k].belong].inteam == i)
+                        if (Inteam[mp[j][k].belong] == i)
                         {
                             ok = true;
                             j = X + 1;
@@ -4023,7 +4039,9 @@ int main()
                     if (mp[i][j].type == General && mp[i][j].tmp <= 0)
                     {
                         if (mapmode == 7)
-                            teampointsmatchscore[Inteam[mp[i][j].belong]] = max(0, teampointsmatchscore[Inteam[mp[i][j].belong]] - 10);
+                            teampointsmatchscore[Inteam[mp[i][j].belong]] = max(0,
+                                                                                teampointsmatchscore[Inteam[mp[i][j].belong]] -
+                                                                                10);
                         player[mp[i][j].belong].respawn();
                     }
             if (mapmode == 6)
@@ -4120,7 +4138,8 @@ int main()
                         bool foundplayer = false, foundenemy = false;
                         for (int k = i - 2; k <= i + 2; k++)
                             for (int w = j - 2; w <= j + 2; w++)
-                                if (k >= 1 && k <= X && w >= 1 && w <= Y && mp[k][w].type == General && mp[k][w].tmp > 0)
+                                if (k >= 1 && k <= X && w >= 1 && w <= Y && mp[k][w].type == General &&
+                                    mp[k][w].tmp > 0)
                                 {
                                     if (Inteam[mp[k][w].belong] == mp[i][j].belong)
                                         foundplayer = true;
@@ -4142,15 +4161,15 @@ int main()
                         }
                         if (foundplayer && !foundenemy && mp[i][j].tmp < pointsTime)
                             mp[i][j].tmp++;
-                    }
-                    else if (mp[i][j].type == 20 && mp[i][j].belong == 0 && mp[i][j].tmp < pointsTime)
+                    } else if (mp[i][j].type == 20 && mp[i][j].belong == 0 && mp[i][j].tmp < pointsTime)
                     {
                         int playerteam = -1;
                         bool sameteam = true;
                         for (int k = i - 2; k <= i + 2; k++)
                         {
                             for (int w = j - 2; w <= j + 2; w++)
-                                if (k >= 1 && k <= X && w >= 1 && w <= Y && mp[k][w].type == General && mp[k][w].tmp > 0)
+                                if (k >= 1 && k <= X && w >= 1 && w <= Y && mp[k][w].type == General &&
+                                    mp[k][w].tmp > 0)
                                 {
                                     if (playerteam == -1)
                                         playerteam = Inteam[mp[k][w].belong];
@@ -4186,6 +4205,8 @@ int main()
         turn++;
         if (isPaint)
             paintRemainTime--;
+        if (isZombie)
+            zombieRemainTime--;
     }
     if (isPaint)
     {
@@ -4200,8 +4221,7 @@ int main()
         if (maxLand == -1)
             if (MessageBox(NULL, "没有队伍胜利。是否保存回放？", "欢呼", MB_OKCANCEL) == IDOK)
                 savereplay();
-            else
-                ;
+            else;
         else
         {
             for (int i = 1; i <= teamNum; i++)
@@ -4223,7 +4243,7 @@ int main()
         for (int j = 1; j <= Y; j++)
             if (mp[i][j].type == General && mp[i][j].tmp > 0)
             {
-                winner = player[mp[i][j].belong].inteam;
+                winner = Inteam[mp[i][j].belong];
                 i = X + 1;
                 break;
             }
@@ -4232,8 +4252,7 @@ int main()
         string opt = "team" + myto_string(winner) + "赢了！是否保存回放？";
         if (MessageBox(NULL, opt.c_str(), "欢呼", MB_OKCANCEL) == IDOK)
             savereplay();
-    }
-    else if (MessageBox(NULL, "没有队伍胜利。是否保存回放？", "欢呼", MB_OKCANCEL) == IDOK)
+    } else if (MessageBox(NULL, "没有队伍胜利。是否保存回放？", "欢呼", MB_OKCANCEL) == IDOK)
         savereplay();
     return 0;
 }
