@@ -147,7 +147,7 @@ int teamNum = 2;        //队伍的数量。如果以 TDM 模式游玩，请确�
 int dq = 40;            //毒圈的扩散时间
 int ktTime = 100;       //空投的投放时间。请保证此变量大于 10
 int pointsTime = 20;    //占领一个据点所需的时间
-int paintTime = 300;    //涂色模式的时间
+int paintTime = 300;    //涂色地图的时间
 int zombieTime = 300;   //Zombie 模式的时间
 
 int dir[4][2] = {{-1, 0},
@@ -1885,7 +1885,7 @@ void putmap(int sx, int sy, int id)
         }
     }
     if (isPaint)
-        printf("涂色模式还剩 %d 回合\n", paintRemainTime);
+        printf("涂色地图还剩 %d 回合\n", paintRemainTime);
     if (isZombie)
     {
         printf("Zombie模式还剩 %d 回合\n", zombieRemainTime);
